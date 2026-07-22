@@ -2383,10 +2383,20 @@ type:"binary"
 
 const sheet=workbook.Sheets[workbook.SheetNames[0]];
 
-const rows = XLSX.utils.sheet_to_json(sheet, {
-  range: 1,
-  defval: "",
-});
+const rows = XLSX.utils
+  .sheet_to_json(sheet, {
+    range: 1,
+    defval: "",
+  })
+  .map((row) => {
+    const normalized = {};
+
+    Object.entries(row).forEach(([key, value]) => {
+      normalized[key.trim()] = value;
+    });
+
+    return normalized;
+  });
 
 console.log(Object.keys(rows[0]));
 console.log(rows[0]);
