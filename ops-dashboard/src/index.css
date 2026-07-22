@@ -1,0 +1,380 @@
+/* @import "tailwindcss";
+
+.btn-primary {
+    background: linear-gradient(135deg, #78c84d, #48ca02) !important;
+    box-shadow: 0 8px 22px -10px rgba(72, 202, 2, .5);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #69b542, #3faa00) !important;
+}
+
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&display=swap');
+.app-bg{
+    background:
+    radial-gradient(1100px 480px at 50% -8%, rgba(42,11,214,.22), transparent 60%),
+    radial-gradient(760px 380px at 100% 1%, rgba(74,47,242,.10), transparent 55%),
+    #09090b;
+}
+.font-mono{font-variant-numeric:tabular-nums}
+button,a,input,select,textarea{transition:background-color .15s ease,border-color .15s ease,color .15s ease,box-shadow .15s ease,transform .15s ease}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#2a2a30;border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:#41414a;background-clip:padding-box}
+::-webkit-scrollbar-track{background:transparent}
+.bg-green-500{background-image:linear-gradient(135deg,#3a1fe0,#1b01b0)!important;background-color:#2a0bd6!important;box-shadow:0 8px 22px -10px rgba(58,31,224,.75),inset 0 1px 0 rgba(255,255,255,.10)!important}
+
+
+.focus\:border-red-500:focus {
+    border-color: #78c84d;
+}
+.focus\:ring-red-500:focus {
+    --tw-ring-color: #78c84d;
+}
+.accent-red-600{accent-color:#2a0bd6!important}
+.acc-text{color:#78c84d!important}
+input[type="date"]{color-scheme:dark}
+input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.85);opacity:.65;cursor:pointer}
+input[type="date"]::-webkit-calendar-picker-indicator:hover{opacity:1} */
+
+
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&display=swap");
+
+*{
+    font-family: "Inter", sans-serif;
+}
+
+body{
+    margin:0;
+    padding:0;
+    background:#09090b;
+    color:#fff;
+}
+
+/* ===============================
+   Background
+================================== */
+
+.app-bg{
+    min-height:100vh;
+    background:
+        radial-gradient(1100px 480px at 50% -8%, rgba(42,11,214,.22), transparent 60%),
+        radial-gradient(760px 380px at 100% 1%, rgba(74,47,242,.10), transparent 55%),
+        #09090b;
+}
+
+/* ===============================
+   Glass Card
+================================== */
+
+.glass-card{
+    background:rgba(255,255,255,.05);
+    backdrop-filter:blur(18px);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:22px;
+    box-shadow:
+        0 20px 40px rgba(0,0,0,.35),
+        inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+/* ===============================
+   Header
+================================== */
+
+.admin-header{
+    background:rgba(0,0,0,.25);
+    backdrop-filter:blur(18px);
+    border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+/* ===============================
+   Buttons
+================================== */
+
+.btn-primary{
+    background:linear-gradient(135deg,#78c84d,#48ca02)!important;
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    font-weight:600;
+    padding:10px 22px;
+    box-shadow:0 8px 22px -10px rgba(72,202,2,.55);
+    transition:.25s;
+}
+
+.btn-primary:hover{
+    background:linear-gradient(135deg,#69b542,#3faa00)!important;
+    transform:translateY(-2px);
+}
+
+.btn-danger{
+    background:linear-gradient(135deg,#ff4d4f,#d9363e);
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    font-weight:600;
+    padding:10px 22px;
+    transition:.25s;
+}
+
+.btn-danger:hover{
+    transform:translateY(-2px);
+}
+
+/* ===============================
+   Dashboard Cards
+================================== */
+
+.dashboard-card{
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.08);
+    backdrop-filter:blur(18px);
+    border-radius:22px;
+    padding:24px;
+    transition:.3s;
+    box-shadow:0 20px 35px rgba(0,0,0,.25);
+}
+
+.dashboard-card:hover{
+    transform:translateY(-6px);
+    border-color:#78c84d;
+    box-shadow:0 20px 40px rgba(72,202,2,.2);
+}
+
+.dashboard-title{
+    color:#9ca3af;
+    font-size:15px;
+}
+
+.dashboard-value{
+    font-size:42px;
+    font-weight:700;
+    color:#78c84d;
+}
+
+/* ===============================
+   Table
+================================== */
+
+.admin-table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.admin-table thead{
+    background:rgba(255,255,255,.08);
+}
+
+.admin-table th{
+    padding:18px;
+    font-weight:600;
+    color:#fff;
+    text-align:left;
+}
+
+.admin-table td{
+    padding:18px;
+    border-top:1px solid rgba(255,255,255,.06);
+}
+
+.admin-table tbody tr{
+    transition:.25s;
+}
+
+.admin-table tbody tr:hover{
+    background:rgba(255,255,255,.04);
+}
+
+/* ===============================
+   Avatar
+================================== */
+
+.user-avatar{
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(135deg,#78c84d,#48ca02);
+    color:#fff;
+    font-weight:700;
+    font-size:18px;
+}
+
+/* ===============================
+   Toggle Switch
+================================== */
+
+.switch{
+    position:relative;
+    display:inline-block;
+    width:54px;
+    height:30px;
+}
+
+.switch input{
+    display:none;
+}
+
+.slider{
+    position:absolute;
+    cursor:pointer;
+    inset:0;
+    border-radius:999px;
+    background:#444;
+    transition:.3s;
+}
+
+.slider:before{
+    position:absolute;
+    content:"";
+    width:22px;
+    height:22px;
+    left:4px;
+    top:4px;
+    background:#fff;
+    border-radius:50%;
+    transition:.3s;
+}
+
+.switch input:checked + .slider{
+    background:linear-gradient(135deg,#3a1fe0,#1b01b0);
+}
+
+.switch input:checked + .slider:before{
+    transform:translateX(24px);
+}
+
+/* ===============================
+   Inputs
+================================== */
+
+input,
+select,
+textarea{
+    transition:.25s;
+}
+
+.focus\:border-red-500:focus{
+    border-color:#78c84d;
+}
+
+.focus\:ring-red-500:focus{
+    --tw-ring-color:#78c84d;
+}
+
+/* ===============================
+   Accent
+================================== */
+
+.acc-text{
+    color:#78c84d!important;
+}
+
+.accent-red-600{
+    accent-color:#2a0bd6!important;
+}
+
+/* ===============================
+   Green Override
+================================== */
+
+.bg-green-500{
+    background-image:linear-gradient(135deg,#3a1fe0,#1b01b0)!important;
+    background-color:#2a0bd6!important;
+    box-shadow:
+        0 8px 22px -10px rgba(58,31,224,.75),
+        inset 0 1px 0 rgba(255,255,255,.10)!important;
+}
+
+/* ===============================
+   Scrollbar
+================================== */
+
+::-webkit-scrollbar{
+    width:10px;
+    height:10px;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#2a2a30;
+    border-radius:8px;
+}
+
+::-webkit-scrollbar-thumb:hover{
+    background:#444;
+}
+
+::-webkit-scrollbar-track{
+    background:transparent;
+}
+
+/* ===============================
+   Date Picker
+================================== */
+
+input[type="date"]{
+    color-scheme:dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator{
+    filter:invert(.85);
+    opacity:.7;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover{
+    opacity:1;
+}
+
+/* ===============================
+   Animations
+================================== */
+
+.fade-in{
+    animation:fadeIn .5s ease;
+}
+
+@keyframes fadeIn{
+
+    from{
+        opacity:0;
+        transform:translateY(15px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+
+}
+
+/* ===============================
+   Responsive
+================================== */
+
+@media(max-width:768px){
+
+    .admin-table{
+        display:block;
+        overflow-x:auto;
+        white-space:nowrap;
+    }
+
+    .dashboard-value{
+        font-size:30px;
+    }
+
+    .dashboard-card{
+        padding:18px;
+    }
+
+    .btn-primary,
+    .btn-danger{
+        width:100%;
+    }
+
+}
