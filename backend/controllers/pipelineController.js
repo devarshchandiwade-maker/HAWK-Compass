@@ -160,6 +160,8 @@ exports.bulkImport = async (req, res) => {
   try {
     const rows = req.body;
 
+    console.log(JSON.stringify(req.body, null, 2));
+
     for (const r of rows) {
       await db.query(
         `
