@@ -1,4 +1,9 @@
-const API = "http://localhost:5000/api/pipeline";
+import axios from "axios";
+
+const API = axios.create({
+      baseURL: import.meta.env.VITE_API_URL + "/api/pipeline"
+});
+
 
 export const fetchPipeline = async () => {
   const res = await fetch(API);
