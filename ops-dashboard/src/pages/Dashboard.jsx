@@ -2870,128 +2870,248 @@ function LeadCard({ leads, setLeads, setEditing, setShowForm }) {
   );
 }
 
-function LeadForm({ lead, onSave, onClose, owners }) {
-  const [f,setF]=useState(
-lead||{
+function LeadForm({ lead, onSave, onClose }) {
+  const [f, setF] = useState(
+    lead || {
+      brand_name: "",
+      services: "",
+      pitch: "",
+      deal_type: "",
+      lead_stage: "",
+      hot_status: "",
+      current_status: "",
+      start_month: "",
+      retainer_amount: 0,
+      annual_retainer_value: 0,
+      project_amount: 0,
+      total_annual_revenue: 0,
+      probability_closure: 0,
+      probabilistic_revenue: 0,
+      source_closed: "",
+    }
+  );
 
-brand_name:"",
-services:"",
-pitch:"",
-
-deal_type:"",
-
-lead_stage:"",
-
-hot_status:"",
-
-current_status:"",
-
-start_month:"",
-
-retainer_amount:0,
-
-annual_retainer_value:0,
-
-project_amount:0,
-
-total_annual_revenue:0,
-
-probability_closure:0,
-
-probabilistic_revenue:0,
-
-source_closed:""
-
-});
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
+
+  useEffect(() => {
+  setF((prev) => ({
+    ...prev,
+    probabilistic_revenue:
+      ((Number(prev.total_annual_revenue) || 0) *
+        (Number(prev.probability_closure) || 0)) /
+      100,
+  }));
+}, [f.total_annual_revenue, f.probability_closure]);
+
   return (
-    <Modal title={lead ? "Edit lead" : "New lead"} onClose={onClose}>
-      <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
+    <Modal title={lead ? "Edit Lead" : "New Lead"} onClose={onClose}>
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
           <Field label="Brand Name">
-<input
-className={inputCls}
-value={f.brand_name}
-onChange={e=>set("brand_name",e.target.value)}
-/>
-</Field>
+            <input
+              className={inputCls}
+              value={f.brand_name}
+              onChange={(e) => set("brand_name", e.target.value)}
+            />
+          </Field>
 
-<Field label="Services">
-<input
-className={inputCls}
-value={f.services}
-onChange={e=>set("services",e.target.value)}
-/>
-</Field>
+          <Field label="Services">
+            <input
+              className={inputCls}
+              value={f.services}
+              onChange={(e) => set("services", e.target.value)}
+            />
+          </Field>
 
-<Field label="Pitch">
-  <select
-    className={inputCls}
-    value={f.pitch || ""}
-    onChange={(e) => set("pitch", e.target.value)}
-  >
-    <option value="">—</option>
-    <option value="Y">Yes</option>
-    <option value="N">No</option>
-  </select>
-</Field>
+          <Field label="Pitch">
+            <select
+              className={inputCls}
+              value={f.pitch}
+              onChange={(e) => set("pitch", e.target.value)}
+            >
+              <option value="">Select Pitch</option>
+              <option value="Y">Yes</option>
+              <option value="N">No</option>
+            </select>
+          </Field>
 
-<Field label="Lead Stage">
-<input
-className={inputCls}
-value={f.lead_stage}
-onChange={e=>set("lead_stage",e.target.value)}
-/>
-</Field>
+          <Field label="Deal Type">
+            <select
+              className={inputCls}
+              value={f.deal_type}
+              onChange={(e) => set("deal_type", e.target.value)}
+            >
+              <option value="">Select Type</option>
+              <option value="Retainer">Retainer</option>
+              <option value="Project">Project</option>
+            </select>
+          </Field>
 
-<Field label="Current Status">
-<input
-className={inputCls}
-value={f.current_status}
-onChange={e=>set("current_status",e.target.value)}
-/>
-</Field>
+          <Field label="Lead Stage">
+            <select
+              className={inputCls}
+              value={f.lead_stage}
+              onChange={(e) => set("lead_stage", e.target.value)}
+            >
+              <option value="">Select Stage</option>
+              <option>New</option>
+              <option>Reached Out</option>
+              <option>Proposal Shared</option>
+              <option>Negotiation</option>
+              <option>Client's Final Response Awaited</option>
+              <option>Closed</option>
+              <option>Won</option>
+              <option>Lost</option>
+            </select>
+          </Field>
 
-<Field label="Revenue">
-<input
-type="number"
-className={inputCls}
-value={f.total_annual_revenue}
-onChange={e=>set("total_annual_revenue",e.target.value)}
-/>
-</Field>
+          <Field label="Hot Status">
+            <select
+              className={inputCls}
+              value={f.hot_status}
+              onChange={(e) => set("hot_status", e.target.value)}
+            >
+              <option value="">Select</option>
+              <option>Hot</option>
+              <option>Warm</option>
+              <option>Cold</option>
+            </select>
+          </Field>
+
+          <Field label="Current Status">
+            <select
+              className={inputCls}
+              value={f.current_status}
+              onChange={(e) => set("current_status", e.target.value)}
+            >
+              <option value="">Select</option>
+              <option>Hot</option>
+              <option>Warm</option>
+              <option>Cold</option>
+            </select>
+          </Field>
+
+          <Field label="Start Month">
+            <select
+              className={inputCls}
+              value={f.start_month}
+              onChange={(e) => set("start_month", e.target.value)}
+            >
+              <option value="">Select Month</option>
+              <option>January</option>
+              <option>February</option>
+              <option>March</option>
+              <option>April</option>
+              <option>May</option>
+              <option>June</option>
+              <option>July</option>
+              <option>August</option>
+              <option>September</option>
+              <option>October</option>
+              <option>November</option>
+              <option>December</option>
+            </select>
+          </Field>
+
+          <Field label="Retainer Amount">
+            <input
+              type="number"
+              className={inputCls}
+              value={f.retainer_amount}
+              onChange={(e) =>
+                set("retainer_amount", Number(e.target.value))
+              }
+            />
+          </Field>
+
+          <Field label="Annual Retainer Value">
+            <input
+              type="number"
+              className={inputCls}
+              value={f.annual_retainer_value}
+              onChange={(e) =>
+                set("annual_retainer_value", Number(e.target.value))
+              }
+            />
+          </Field>
+
+          <Field label="Project Amount">
+            <input
+              type="number"
+              className={inputCls}
+              value={f.project_amount}
+              onChange={(e) =>
+                set("project_amount", Number(e.target.value))
+              }
+            />
+          </Field>
+
+          <Field label="Total Annual Revenue">
+            <input
+              type="number"
+              className={inputCls}
+              value={f.total_annual_revenue}
+              onChange={(e) =>
+                set("total_annual_revenue", Number(e.target.value))
+              }
+            />
+          </Field>
+
+          <Field label="Probability of Closure (%)">
+            <select
+              className={inputCls}
+              value={f.probability_closure}
+              onChange={(e) => set("probability_closure", Number(e.target.value))}
+            >
+              <option value={0}>0%</option>
+              <option value={10}>10%</option>
+              <option value={20}>20%</option>
+              <option value={30}>30%</option>
+              <option value={40}>40%</option>
+              <option value={50}>50%</option>
+              <option value={60}>60%</option>
+              <option value={70}>70%</option>
+              <option value={80}>80%</option>
+              <option value={90}>90%</option>
+              <option value={100}>100%</option>
+            </select>
+          </Field>
+
+          <Field label="Probabilistic Revenue">
+            <input
+              type="number"
+              className={inputCls}
+              value={f.probabilistic_revenue}
+              onChange={(e) =>
+                set("probabilistic_revenue", Number(e.target.value))
+              }
+            />
+          </Field>
+
+          <Field label="Source for Closed">
+            <input
+              className={inputCls}
+              value={f.source_closed}
+              onChange={(e) => set("source_closed", e.target.value)}
+            />
+          </Field>
+
         </div>
-        {/* <Field label="Stage">
-          <select
-            className={inputCls}
-            value={f.stage}
-            onChange={(e) => set("stage", e.target.value)}
-          >
-            {STAGES.map((s) => (
-              <option key={s}>{s}</option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Notes">
-          <textarea
-            rows={2}
-            className={inputCls}
-            value={f.notes}
-            onChange={(e) => set("notes", e.target.value)}
-          />
-        </Field> */}
-        <div className="flex justify-end gap-2 pt-1">
+
+        <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
           <button
             onClick={onClose}
-            className="rounded-md px-3 py-2 text-xs text-zinc-400 hover:text-zinc-200"
+            className="rounded-md px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200"
           >
             Cancel
           </button>
+
           <button
-            onClick={()=>onSave(f)}
-            className="rounded-md btn-primary px-4 py-2 text-xs font-medium text-white hover:bg-red-500"
+            onClick={() => onSave(f)}
+            className="rounded-md btn-primary px-5 py-2 text-sm font-medium text-white"
           >
-            {lead ? "Save" : "Add lead"}
+            {lead ? "Save Changes" : "Add Lead"}
           </button>
         </div>
       </div>
