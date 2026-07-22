@@ -1,56 +1,30 @@
 import axios from "axios";
 
 const API = axios.create({
-      baseURL: import.meta.env.VITE_API_URL + "/api/pipeline"
+  baseURL: `${import.meta.env.VITE_API_URL}/api/pipeline`,
 });
 
-
 export const fetchPipeline = async () => {
-  const res = await fetch(API);
-  return await res.json();
+  const { data } = await API.get("/");
+  return data;
 };
 
 export const createLead = async (lead) => {
-  const res = await fetch(API, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(lead),
-  });
-
-  return await res.json();
+  const { data } = await API.post("/", lead);
+  return data;
 };
 
 export const editLead = async (id, lead) => {
-  const res = await fetch(`${API}/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(lead),
-  });
-
-  return await res.json();
+  const { data } = await API.put(`/${id}`, lead);
+  return data;
 };
 
 export const removeLead = async (id) => {
-  const res = await fetch(`${API}/${id}`, {
-    method: "DELETE",
-  });
-
-  return await res.json();
+  const { data } = await API.delete(`/${id}`);
+  return data;
 };
 
-// NEW
 export const importPipeline = async (rows) => {
-  const res = await fetch(`${API}/import`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(rows),
-  });
-
-  return await res.json();
+  const { data } = await API.post("/import", rows);
+  return data;
 };
