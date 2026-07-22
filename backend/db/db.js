@@ -1,12 +1,13 @@
 const mysql = require("mysql2");
 
-const db = mysql.createPool({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "ops_dashboard",
+const pool = mysql.createPool({
+    host: process.env.MYSQLHOST,
+    port: process.env.MYSQLPORT,
+    user: process.env.MYSQLUSER,
+    password: process.env.MYSQLPASSWORD,
+    database: process.env.MYSQLDATABASE,
     waitForConnections: true,
     connectionLimit: 10
 });
 
-module.exports = db.promise();
+module.exports = pool.promise();
