@@ -2398,8 +2398,6 @@ const rows = XLSX.utils
     return normalized;
   });
 
-console.log(Object.keys(rows[0]));
-console.log(rows[0]);
 
 const toNumber = (value) => {
   if (!value) return 0;
@@ -2433,14 +2431,12 @@ const data = rows.map((r) => ({
   source_closed: r["Source for Closed"],
 }));
 
-console.log(rows);
-console.log(data);
 
 const updated = await importPipeline(data);
 
 setLeads(updated);
 
-console.log(updated)
+
 
 };
 
@@ -2641,12 +2637,16 @@ function LeadCard({ leads, setLeads, setEditing, setShowForm }) {
       {/* toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[200px]">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"
+          />
+
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search brand, services, status, source..."
-            className={inputCls}
+            className={`${inputCls} pl-10`}
           />
         </div>
 
