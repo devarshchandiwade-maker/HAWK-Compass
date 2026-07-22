@@ -2302,6 +2302,7 @@ function PipelineView({ leads, setLeads, owners }) {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [showAI, setShowAI] = useState(false);
+  const [toast, setToast] = useState(null);
 
   const save = async (lead) => {
   try {
@@ -2309,11 +2310,23 @@ function PipelineView({ leads, setLeads, owners }) {
 
     if (lead.id) {
       data = await editLead(lead.id, lead);
+      setToast({
+          type: "edit",
+          title: "Lead Updated",
+          message: `${lead.brand_name} has been updated successfully.`,
+      });
     } else {
       data = await createLead(lead);
     }
 
     setLeads(data);
+
+    setToast({
+        type: "add",
+        title: "Lead Added",
+        message: `${lead.brand_name} has been added successfully.`,
+    });
+
     setShowForm(false);
     setEditing(null);
   } catch (err) {
@@ -2359,6 +2372,13 @@ const move = async (lead, stage) => {
 
     const updatedLeads = await fetchPipeline();
     setLeads(updatedLeads);
+    const count = items.filter((i) => i._keep).length;
+
+    setToast({
+        type: "import",
+        title: "AI Import Complete",
+        message: `${count} lead${count > 1 ? "s" : ""} imported successfully.`,
+    });
     setShowAI(false);
   } catch (err) {
     console.error(err);
@@ -2436,7 +2456,11 @@ const updated = await importPipeline(data);
 
 setLeads(updated);
 
-
+setToast({
+    type: "import",
+    title: "Excel Imported",
+    message: `${data.length} lead${data.length > 1 ? "s" : ""} imported successfully into the pipeline.`,
+});
 
 };
 
@@ -2509,6 +2533,11 @@ reader.readAsBinaryString(file);
           onConfirm={addManyLeads}
         />
       )}
+
+      <PipelineToast
+          toast={toast}
+          onClose={() => setToast(null)}
+      />
     </div>
   );
 }
@@ -2768,8 +2797,14 @@ function LeadCard({ leads, setLeads, setEditing, setShowForm }) {
                           className="text-xs text-red-400 hover:text-red-300"
                           onClick={async () => {
                             if (!confirm(`Delete ${lead.brand_name}?`)) return;
+                            const brand = lead.brand_name;
                             const data = await removeLead(lead.id);
                             setLeads(data);
+                            setToast({
+                                type: "delete",
+                                title: "Lead Deleted",
+                                message: `${brand} has been removed from the pipeline.`,
+                            });
                           }}
                         >
                           Delete
