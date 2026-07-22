@@ -2401,7 +2401,8 @@ const toNumber = (value) => {
       .trim()
   ) || 0;
 };
-
+console.log("With spaces:", rows[0][" Project Amount "]);
+console.log("Without spaces:", rows[0]["Project Amount"]);
 const data = rows.map((r) => ({
   brand_name: r["Brand Name"],
   services: r["Services"],
