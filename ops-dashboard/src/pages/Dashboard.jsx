@@ -81,6 +81,8 @@ import { extractTasksFromImage } from "../api/aiApi";
 import Login from "./Login";
 import { getPermissions } from "../api/authApi";
 import { useNavigate } from "react-router-dom";
+
+import { PipelineToast } from "../components/PipelineToast";
 /* ------------------------------------------------------------------ */
 /* helpers                                                             */
 /* ------------------------------------------------------------------ */
