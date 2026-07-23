@@ -83,6 +83,7 @@ import { getPermissions } from "../api/authApi";
 import { useNavigate } from "react-router-dom";
 
 import  PipelineToast from "../components/PipelineToast";
+import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 /* ------------------------------------------------------------------ */
 /* helpers                                                             */
 /* ------------------------------------------------------------------ */
@@ -541,6 +542,7 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
   const [query, setQuery] = useState("");
   const [hideDone, setHideDone] = useState(false);
   const [sort, setSort] = useState({ key: null, dir: "asc" });
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [toast, setToast] = useState(null);
 
   const save = async (task) => {
@@ -583,8 +585,6 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
 };
 
   const remove = async (task) => {
-  if (!window.confirm(`Delete "${task.title}"?`)) return;
-
   try {
     const data = await removeTask(task.id);
 
@@ -595,6 +595,8 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
       title: "Task Deleted",
       message: `"${task.title}" has been deleted successfully.`,
     });
+
+    setConfirmDelete(null);
   } catch (err) {
     console.error(err);
     alert("Failed to delete task");
@@ -959,7 +961,7 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
                           <Pencil size={14} />
                         </button>
                         <button
-                          onClick={() => remove(t)}
+                          onClick={() => setConfirmDelete(t)}
                           className="rounded p-1 text-zinc-500 hover:text-red-400"
                         >
                           <Trash2 size={14} />
@@ -999,6 +1001,14 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
           onConfirm={addMany}
         />
       )}
+
+      <ConfirmDeleteModal
+        open={!!confirmDelete}
+        title="Delete Task"
+        message={`Are you sure you want to delete "${confirmDelete?.title}"? This action cannot be undone.`}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={() => remove(confirmDelete)}
+      />
 
 
       <PipelineToast
