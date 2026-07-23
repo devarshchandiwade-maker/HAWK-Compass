@@ -190,19 +190,20 @@ exports.bulkImport = async (req, res) => {
   try {
     const rows = req.body;
 
-    console.log(JSON.stringify(req.body, null, 2));
+    const skipped = [];
+    let insertedCount = 0;
 
     for (const r of rows) {
-      
       const [exists] = await db.query(
         "SELECT id FROM pipeline WHERE LOWER(TRIM(brand_name)) = LOWER(TRIM(?))",
         [r.brand_name]
       );
 
       if (exists.length > 0) {
+        skipped.push(r.brand_name);
         continue; // Skip duplicate
       }
-      
+
       await db.query(
         `
         INSERT INTO pipeline (
@@ -242,15 +243,19 @@ exports.bulkImport = async (req, res) => {
           r.source_closed,
         ]
       );
-    }
 
-    
+      insertedCount++;
+    }
 
     const [rowsData] = await db.query(
       "SELECT * FROM pipeline ORDER BY created_at DESC"
     );
 
-    res.json(rowsData);
+    res.json({
+      leads: rowsData,
+      insertedCount,
+      skipped, // array of brand names that were duplicates and skipped
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: err.message });

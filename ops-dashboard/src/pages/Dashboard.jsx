@@ -2502,10 +2502,19 @@ const updated = await importPipeline(data);
 
 setLeads(updated);
 
+// setToast({
+//     type: "import",
+//     title: "Excel Imported",
+//     message: `${data.length} lead${data.length > 1 ? "s" : ""} imported successfully into the pipeline.`,
+// });
+
 setToast({
-    type: "import",
-    title: "Excel Imported",
-    message: `${data.length} lead${data.length > 1 ? "s" : ""} imported successfully into the pipeline.`,
+  type: "import",
+  title: "Excel Imported",
+  message:
+    updated.skipped.length > 0
+      ? `${updated.insertedCount} lead${updated.insertedCount !== 1 ? "s" : ""} imported. ${updated.skipped.length} skipped (duplicate brand${updated.skipped.length !== 1 ? "s" : ""}: ${updated.skipped.join(", ")}).`
+      : `${updated.insertedCount} lead${updated.insertedCount !== 1 ? "s" : ""} imported successfully into the pipeline.`,
 });
 
 };
@@ -2627,6 +2636,10 @@ function Badge({ children, tone = "zinc" }) {
     red: "bg-red-500/10 text-red-400 border-red-500/30",
     amber: "bg-amber-500/10 text-amber-400 border-amber-500/30",
     blue: "bg-blue-500/10 text-blue-400 border-blue-500/30",
+    purple: "bg-purple-500/10 text-purple-400 border-purple-500/30",
+    indigo: "bg-indigo-500/10 text-indigo-400 border-indigo-500/30",
+    orange: "bg-orange-500/10 text-orange-400 border-orange-500/30",
+    teal: "bg-teal-500/10 text-teal-400 border-teal-500/30",
   };
   return (
     <span
@@ -2648,11 +2661,17 @@ const hotTone = (v) => {
 };
 
 const stageTone = (v) => {
-  const s = (v || "").toLowerCase();
-  if (s.includes("won")) return "green";
-  if (s.includes("lost")) return "red";
-  if (s.includes("negotiat") || s.includes("proposal")) return "amber";
-  return "blue";
+  const map = {
+    "New": "zinc",
+    "Reached Out": "blue",
+    "Proposal Shared": "indigo",
+    "Negotiation": "amber",
+    "Client's Final Response Awaited": "orange",
+    "Closed": "teal",
+    "Won": "green",
+    "Lost": "red",
+  };
+  return map[v] || "zinc";
 };
 
 
@@ -2683,7 +2702,7 @@ function LeadCard({ leads, setLeads, setEditing, setShowForm }) {
 
     const matchesStage = !stageFilter || l.lead_stage === stageFilter;
     const matchesPitch = !pitchFilter || l.pitch === pitchFilter;
-    const matchesHot = !hotFilter || l.hot_status === hotFilter;
+    const matchesHot = !hotFilter || l.current_status === hotFilter;
 
     return matchesSearch && matchesStage && matchesPitch && matchesHot;
   });

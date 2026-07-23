@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { CheckCircle2, X, Plus, Pencil, Trash2, Upload } from "lucide-react";
+import { CheckCircle2, X, Plus, Pencil, Trash2, Upload, AlertCircle } from "lucide-react";
 
 export default function PipelineToast({ toast, onClose }) {
   useEffect(() => {
@@ -16,6 +16,8 @@ export default function PipelineToast({ toast, onClose }) {
     edit: <Pencil size={16} className="text-white" />,
     delete: <Trash2 size={16} className="text-white" />,
     import: <Upload size={16} className="text-white" />,
+    error: <AlertCircle size={16} className="text-white" />,
+
   };
 
   return (
