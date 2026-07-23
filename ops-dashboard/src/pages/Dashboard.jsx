@@ -541,6 +541,7 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
   const [query, setQuery] = useState("");
   const [hideDone, setHideDone] = useState(false);
   const [sort, setSort] = useState({ key: null, dir: "asc" });
+  const [toast, setToast] = useState(null);
 
   const save = async (task) => {
   try {
@@ -557,9 +558,19 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
     if (task.id) {
       const data = await editTask(task.id, payload);
       setTasks(data);
+      setToast({
+        type: "edit",
+        title: "Task Updated",
+        message: `"${task.title}" has been updated successfully.`,
+      });
     } else {
       const data = await createTask(payload);
       setTasks(data);
+      setToast({
+        type: "add",
+        title: "Task Added",
+        message: `"${task.title}" has been added successfully.`,
+      });
     }
 
     setShowForm(false);
@@ -571,19 +582,24 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
   }
 };
 
-  const remove = async (id) => {
-    if (!window.confirm("Delete this task?")) return;
+  const remove = async (task) => {
+  if (!window.confirm(`Delete "${task.title}"?`)) return;
 
-    try {
-      const data = await removeTask(id);
+  try {
+    const data = await removeTask(task.id);
 
-      setTasks(data);
-    } catch (err) {
-      console.error(err);
+    setTasks(data);
 
-      alert("Failed to delete task");
-    }
-  };
+    setToast({
+      type: "delete",
+      title: "Task Deleted",
+      message: `"${task.title}" has been deleted successfully.`,
+    });
+  } catch (err) {
+    console.error(err);
+    alert("Failed to delete task");
+  }
+};
 
   const addMany = async (items) => {
     try {
@@ -611,6 +627,14 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
       const updatedTasks = await fetchTasks();
 
       setTasks(updatedTasks);
+      setToast({
+      type: "import",
+      title: "AI Import Complete",
+      message: `${validTasks.length} task${
+        validTasks.length > 1 ? "s" : ""
+      } imported successfully.`,
+    });
+    setShowAI(false);
     } catch (err) {
       console.error(err);
 
@@ -935,7 +959,7 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
                           <Pencil size={14} />
                         </button>
                         <button
-                          onClick={() => remove(t.id)}
+                          onClick={() => remove(t)}
                           className="rounded p-1 text-zinc-500 hover:text-red-400"
                         >
                           <Trash2 size={14} />
@@ -975,6 +999,12 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
           onConfirm={addMany}
         />
       )}
+
+
+      <PipelineToast
+          toast={toast}
+          onClose={() => setToast(null)}
+        />
     </div>
   );
 }
