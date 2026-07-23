@@ -41,8 +41,9 @@ import {
   TrendingUp,
   TrendingDown,
   ClipboardPaste,
-  Building2, 
-  Tag
+  Building2,
+  Tag,
+  CheckCircle2, XCircle, Repeat, Briefcase, Wallet, Trophy
 } from "lucide-react";
 import {
   fetchTasks,
@@ -67,16 +68,13 @@ import {
   importPipeline,
 } from "../services/pipelineService";
 
-import{
+import {
   fetchOwners,
   createOwner,
-  removeOwner
+  removeOwner,
 } from "../services/ownerService";
 
-import{
-  fetchUsers,
-} from "../services/userService";
-
+import { fetchUsers } from "../services/userService";
 
 import { extractTasksFromImage } from "../api/aiApi";
 
@@ -84,7 +82,7 @@ import Login from "./Login";
 import { getPermissions } from "../api/authApi";
 import { useNavigate } from "react-router-dom";
 
-import  PipelineToast from "../components/PipelineToast";
+import PipelineToast from "../components/PipelineToast";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 
 /* ------------------------------------------------------------------ */
@@ -150,7 +148,6 @@ const fileToBase64 = (file) =>
     r.onerror = () => rej(new Error("Could not read the file"));
     r.readAsDataURL(file);
   });
-
 
 /* ------------------------------------------------------------------ */
 /* config                                                             */
@@ -238,8 +235,6 @@ function Modal({ title, onClose, children, wide }) {
 const COMPASS_MARK =
   "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJDb21wYXNzIGljb24iPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJuQiIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMyRDZDRjYiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMxRTRGRDYiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9Im5UIiB4MT0iMCIgeTE9IjEiIHgyPSIxIiB5Mj0iMCI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzE5QzZBNiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzBFOUI4NiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSI5NiIgZmlsbD0iIzE1Mjk0RCIvPgogIDxnPgogICAgPHBhdGggZD0iTSAyNzguNjkgNzEuMTkgQSAxODYuMjAgMTg2LjIwIDAgMCAxIDQ0MC44MSAyMzMuMzEgTSA0NDAuODEgMjc4LjY5IEEgMTg2LjIwIDE4Ni4yMCAwIDAgMSAyNzguNjkgNDQwLjgxIE0gMjMzLjMxIDQ0MC44MSBBIDE4Ni4yMCAxODYuMjAgMCAwIDEgNzEuMTkgMjc4LjY5IE0gNzEuMTkgMjMzLjMxIEEgMTg2LjIwIDE4Ni4yMCAwIDAgMSAyMzMuMzEgNzEuMTkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0U0RTlGMiIgc3Ryb2tlLXdpZHRoPSIxNC4yNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgICA8Y2lyY2xlIGN4PSIzODcuNjYiIGN5PSIxMjQuMzQiIHI9IjUuMjIiIGZpbGw9IiNFNEU5RjIiLz4KICAgIDxjaXJjbGUgY3g9IjM4Ny42NiIgY3k9IjM4Ny42NiIgcj0iNS4yMiIgZmlsbD0iI0U0RTlGMiIvPgogICAgPGNpcmNsZSBjeD0iMTI0LjM0IiBjeT0iMzg3LjY2IiByPSI1LjIyIiBmaWxsPSIjRTRFOUYyIi8+CiAgICA8Y2lyY2xlIGN4PSIxMjQuMzQiIGN5PSIxMjQuMzQiIHI9IjUuMjIiIGZpbGw9IiNFNEU5RjIiLz4KICAgIDxwYXRoIGQ9Ik0gMzM2LjYxIDE3NS4zOSBMIDI3MS40NSAyNjMuMzkgTCAyNjAuMDMgMjUxLjk3IFoiIGZpbGw9IiNEOERFRTgiLz4KICAgIDxwYXRoIGQ9Ik0gMzM2LjYxIDE3NS4zOSBMIDI2MC4wMyAyNTEuOTcgTCAyNDguNjEgMjQwLjU1IFoiIGZpbGw9IiNBRUI3QzciLz4KICAgIDxwYXRoIGQ9Ik0gMzM2LjYxIDMzNi42MSBMIDI0OC42MSAyNzEuNDUgTCAyNjAuMDMgMjYwLjAzIFoiIGZpbGw9IiNEOERFRTgiLz4KICAgIDxwYXRoIGQ9Ik0gMzM2LjYxIDMzNi42MSBMIDI2MC4wMyAyNjAuMDMgTCAyNzEuNDUgMjQ4LjYxIFoiIGZpbGw9IiNBRUI3QzciLz4KICAgIDxwYXRoIGQ9Ik0gMTc1LjM5IDMzNi42MSBMIDI0MC41NSAyNDguNjEgTCAyNTEuOTcgMjYwLjAzIFoiIGZpbGw9IiNEOERFRTgiLz4KICAgIDxwYXRoIGQ9Ik0gMTc1LjM5IDMzNi42MSBMIDI1MS45NyAyNjAuMDMgTCAyNjMuMzkgMjcxLjQ1IFoiIGZpbGw9IiNBRUI3QzciLz4KICAgIDxwYXRoIGQ9Ik0gMTc1LjM5IDE3NS4zOSBMIDI2My4zOSAyNDAuNTUgTCAyNTEuOTcgMjUxLjk3IFoiIGZpbGw9IiNEOERFRTgiLz4KICAgIDxwYXRoIGQ9Ik0gMTc1LjM5IDE3NS4zOSBMIDI1MS45NyAyNTEuOTcgTCAyNDAuNTUgMjYzLjM5IFoiIGZpbGw9IiNBRUI3QzciLz4KICAgIDxwYXRoIGQ9Ik0gMjU2LjAwIDM1LjYwIEwgMjgwLjcwIDI0OC40MCBMIDI1Ni4wMCAyNDguNDAgWiIgZmlsbD0iI0Q4REVFOCIvPgogICAgPHBhdGggZD0iTSAyNTYuMDAgMzUuNjAgTCAyNTYuMDAgMjQ4LjQwIEwgMjMxLjMwIDI0OC40MCBaIiBmaWxsPSIjQUVCN0M3Ii8+CiAgICA8cGF0aCBkPSJNIDQ3Ni40MCAyNTYuMDAgTCAyNjMuNjAgMjgwLjcwIEwgMjYzLjYwIDI1Ni4wMCBaIiBmaWxsPSIjRDhERUU4Ii8+CiAgICA8cGF0aCBkPSJNIDQ3Ni40MCAyNTYuMDAgTCAyNjMuNjAgMjU2LjAwIEwgMjYzLjYwIDIzMS4zMCBaIiBmaWxsPSIjQUVCN0M3Ii8+CiAgICA8cGF0aCBkPSJNIDI1Ni4wMCA0NzYuNDAgTCAyMzEuMzAgMjYzLjYwIEwgMjU2LjAwIDI2My42MCBaIiBmaWxsPSIjRDhERUU4Ii8+CiAgICA8cGF0aCBkPSJNIDI1Ni4wMCA0NzYuNDAgTCAyNTYuMDAgMjYzLjYwIEwgMjgwLjcwIDI2My42MCBaIiBmaWxsPSIjQUVCN0M3Ii8+CiAgICA8cGF0aCBkPSJNIDM1LjYwIDI1Ni4wMCBMIDI0OC40MCAyMzEuMzAgTCAyNDguNDAgMjU2LjAwIFoiIGZpbGw9IiNEOERFRTgiLz4KICAgIDxwYXRoIGQ9Ik0gMzUuNjAgMjU2LjAwIEwgMjQ4LjQwIDI1Ni4wMCBMIDI0OC40MCAyODAuNzAgWiIgZmlsbD0iI0FFQjdDNyIvPgogICAgPHBhdGggZD0iTSAzNzUuNTEgMTIzLjI3IEwgMjc0LjM2IDI3Mi41MyBMIDIzNy42NCAyMzkuNDcgWiIgZmlsbD0idXJsKCNuQikiLz4KICAgIDxwYXRoIGQ9Ik0gMTU1LjU2IDM2Ny41NSBMIDI3NC4zNiAyNzIuNTMgTCAyMzcuNjQgMjM5LjQ3IFoiIGZpbGw9InVybCgjblQpIi8+CiAgICA8Y2lyY2xlIGN4PSIyNTYuMDAiIGN5PSIyNTYuMDAiIHI9IjM4LjAwIiBmaWxsPSIjRjJGNUZBIi8+CiAgICA8Y2lyY2xlIGN4PSIyNTYuMDAiIGN5PSIyNTYuMDAiIHI9IjE4LjA1IiBmaWxsPSIjMEUxRjNEIi8+CiAgICA8Y2lyY2xlIGN4PSIyNTYuMDAiIGN5PSIyNTYuMDAiIHI9IjE4LjA1IiBmaWxsPSJub25lIiBzdHJva2U9IiNGMkY1RkEiIHN0cm9rZS13aWR0aD0iMi4zOCIvPgogIDwvZz4KPC9zdmc+";
 
-
-
 function CompassMark({ size = 32 }) {
   return (
     <img
@@ -270,18 +265,17 @@ export default function App() {
   const navigate = useNavigate();
 
   useEffect(() => {
-  async function loadPermissions() {
-    try {
-      const res = await getPermissions();
-      setPermissions(res.data);
-    } catch (err) {
-      console.error(err);
+    async function loadPermissions() {
+      try {
+        const res = await getPermissions();
+        setPermissions(res.data);
+      } catch (err) {
+        console.error(err);
+      }
     }
-  }
 
-  loadPermissions();
-}, []);
-
+    loadPermissions();
+  }, []);
 
   useEffect(() => {
     loadUsers();
@@ -294,18 +288,13 @@ export default function App() {
 
   const [loaded, setLoaded] = useState(false);
 
-
   useEffect(() => {
+    const storedUser = localStorage.getItem("user");
 
-      const storedUser = localStorage.getItem("user");
-
-      if(storedUser){
-
-          setUser(JSON.parse(storedUser));
-
-      }
-
-  },[]);
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   // useEffect(() => {
   //   (async () => {
@@ -344,84 +333,80 @@ export default function App() {
     if (loaded) store.set("ops:owners", users);
   }, [users, loaded]);
 
+  useEffect(() => {
+    async function loadRetainers() {
+      try {
+        const data = await fetchRetainers();
+        setRetainers(
+          data.map((r) => ({
+            ...r,
+            startDate: r.start_date,
+            endDate: r.end_date,
+          })),
+        );
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    loadRetainers();
+  }, []);
 
   useEffect(() => {
-  async function loadRetainers() {
-    try {
-      const data = await fetchRetainers();
-      setRetainers(
-  data.map((r) => ({
-    ...r,
-    startDate: r.start_date,
-    endDate: r.end_date,
-  }))
-);
-    } catch (err) {
-      console.error(err);
+    async function loadPipeline() {
+      try {
+        const data = await fetchPipeline();
+        setLeads(data);
+      } catch (err) {
+        console.error(err);
+      }
     }
-  }
 
-  loadRetainers();
-}, []);
-
-useEffect(() => {
-  async function loadPipeline() {
-    try {
-      const data = await fetchPipeline();
-      setLeads(data);
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  loadPipeline();
-}, []);
-
-
+    loadPipeline();
+  }, []);
 
   const tabs = [];
 
-if (permissions.task_tracker) {
-  tabs.push({
-    id: "tasks",
-    label: "Task Tracker",
-    icon: ListChecks,
-  });
-}
+  if (permissions.task_tracker) {
+    tabs.push({
+      id: "tasks",
+      label: "Task Tracker",
+      icon: ListChecks,
+    });
+  }
 
-if (permissions.retainers) {
-  tabs.push({
-    id: "retainers",
-    label: "Retainers",
-    icon: FileSpreadsheet,
-  });
-}
+  if (permissions.retainers) {
+    tabs.push({
+      id: "retainers",
+      label: "Retainers",
+      icon: FileSpreadsheet,
+    });
+  }
 
-if (permissions.pipeline) {
-  tabs.push({
-    id: "pipeline",
-    label: "Pipeline",
-    icon: GitBranch,
-  });
-}
+  if (permissions.pipeline) {
+    tabs.push({
+      id: "pipeline",
+      label: "Pipeline",
+      icon: GitBranch,
+    });
+  }
 
-if (permissions.sal_ret) {
-  tabs.push({
-    id: "salret",
-    label: "Sal/Ret",
-    icon: Percent,
-  });
-}
+  if (permissions.sal_ret) {
+    tabs.push({
+      id: "salret",
+      label: "Sal/Ret",
+      icon: Percent,
+    });
+  }
 
-const handleLogout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  navigate("/");
-};
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/");
+  };
 
-
-  if(!user){
-      return <Login onLogin={setUser}/>;
+  if (!user) {
+    return <Login onLogin={setUser} />;
   }
 
   return (
@@ -434,7 +419,6 @@ const handleLogout = () => {
         MozOsxFontSmoothing: "grayscale",
       }}
     >
-
       {/* header */}
       <header className="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -448,8 +432,6 @@ const handleLogout = () => {
                 Tasks · Retainers · Pipeline · Sal/Ret
               </div>
             </div>
-            
-
           </div>
           <nav className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900 p-1">
             {tabs.map((t) => {
@@ -471,65 +453,47 @@ const handleLogout = () => {
             })}
           </nav>
 
-         <div className="flex items-center gap-3">
-  <div
-    onClick={() => navigate("/settings")}
-    className="flex items-center gap-3 cursor-pointer"
-  >
-    <img
-      src={user.photo}
-      alt=""
-      className="h-9 w-9 rounded-full"
-    />
-    <div>
-      <div className="text-sm">{user.name}</div>
-      <div className="text-xs text-zinc-500">{user.email}</div>
-    </div>
-  </div>
+          <div className="flex items-center gap-3">
+            <div
+              onClick={() => navigate("/settings")}
+              className="flex items-center gap-3 cursor-pointer"
+            >
+              <img src={user.photo} alt="" className="h-9 w-9 rounded-full" />
+              <div>
+                <div className="text-sm">{user.name}</div>
+                <div className="text-xs text-zinc-500">{user.email}</div>
+              </div>
+            </div>
 
-  <button
-    onClick={handleLogout}
-    className="bg-red-600 text-white px-3 py-2 text-xs font-medium rounded cursor-pointer hover:bg-red-700 transition text-sm"
-  >
-    Logout
-  </button>
-</div>
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 text-white px-3 py-2 text-xs font-medium rounded cursor-pointer hover:bg-red-700 transition text-sm"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
         {tab === "tasks" && permissions.task_tracker === 1 && (
-        <TasksView
+          <TasksView
             tasks={tasks}
             setTasks={setTasks}
             users={users}
             setUsers={setUsers}
-        />
+          />
         )}
         {tab === "retainers" && permissions.retainers === 1 && (
-        <RetainersView
-            retainers={retainers}
-            setRetainers={setRetainers}
-        />
+          <RetainersView retainers={retainers} setRetainers={setRetainers} />
         )}
 
         {tab === "pipeline" && permissions.pipeline === 1 && (
-        <PipelineView
-            leads={leads}
-            setLeads={setLeads}
-            users={users}
-            
-        />
+          <PipelineView leads={leads} setLeads={setLeads} users={users} />
         )}
 
-        {tab === "salret" && permissions.sal_ret === 1 && (
-        <SalRetView />
-        )}
-
-        
+        {tab === "salret" && permissions.sal_ret === 1 && <SalRetView />}
       </main>
-
-      
     </div>
   );
 }
@@ -553,62 +517,61 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
   const [toast, setToast] = useState(null);
 
   const save = async (task) => {
-  try {
-    const payload = {
-      title: task.title,
-      assignee: task.assignee,
-      user_id: task.user_id, 
-      priority: task.priority,
-      status: task.status,
-      due_date: task.dueDate,
-      notes: task.notes,
-    };
+    try {
+      const payload = {
+        title: task.title,
+        assignee: task.assignee,
+        user_id: task.user_id,
+        priority: task.priority,
+        status: task.status,
+        due_date: task.dueDate,
+        notes: task.notes,
+      };
 
-    if (task.id) {
-      const data = await editTask(task.id, payload);
-      setTasks(data);
-      setToast({
-        type: "edit",
-        title: "Task Updated",
-        message: `"${task.title}" has been updated successfully.`,
-      });
-    } else {
-      const data = await createTask(payload);
-      setTasks(data);
-      setToast({
-        type: "add",
-        title: "Task Added",
-        message: `"${task.title}" has been added successfully.`,
-      });
+      if (task.id) {
+        const data = await editTask(task.id, payload);
+        setTasks(data);
+        setToast({
+          type: "edit",
+          title: "Task Updated",
+          message: `"${task.title}" has been updated successfully.`,
+        });
+      } else {
+        const data = await createTask(payload);
+        setTasks(data);
+        setToast({
+          type: "add",
+          title: "Task Added",
+          message: `"${task.title}" has been added successfully.`,
+        });
+      }
+
+      setShowForm(false);
+      setEditing(null);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save task");
     }
-
-    setShowForm(false);
-    setEditing(null);
-
-  } catch (err) {
-    console.error(err);
-    alert("Failed to save task");
-  }
-};
+  };
 
   const remove = async (task) => {
-  try {
-    const data = await removeTask(task.id);
+    try {
+      const data = await removeTask(task.id);
 
-    setTasks(data);
+      setTasks(data);
 
-    setToast({
-      type: "delete",
-      title: "Task Deleted",
-      message: `"${task.title}" has been deleted successfully.`,
-    });
+      setToast({
+        type: "delete",
+        title: "Task Deleted",
+        message: `"${task.title}" has been deleted successfully.`,
+      });
 
-    setConfirmDelete(null);
-  } catch (err) {
-    console.error(err);
-    alert("Failed to delete task");
-  }
-};
+      setConfirmDelete(null);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete task");
+    }
+  };
 
   const addMany = async (items) => {
     try {
@@ -637,13 +600,13 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
 
       setTasks(updatedTasks);
       setToast({
-      type: "import",
-      title: "AI Import Complete",
-      message: `${validTasks.length} task${
-        validTasks.length > 1 ? "s" : ""
-      } imported successfully.`,
-    });
-    setShowAI(false);
+        type: "import",
+        title: "AI Import Complete",
+        message: `${validTasks.length} task${
+          validTasks.length > 1 ? "s" : ""
+        } imported successfully.`,
+      });
+      setShowAI(false);
     } catch (err) {
       console.error(err);
 
@@ -652,53 +615,40 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
   };
 
   const cycleStatus = async (task) => {
-
-    const confirmed = window.confirm(
-        `Change status of "${task.title}"?`
-    );
+    const confirmed = window.confirm(`Change status of "${task.title}"?`);
 
     if (!confirmed) return;
 
     const idx = TASK_STATUSES.indexOf(task.status);
 
-    const next =
-        TASK_STATUSES[
-            (idx + 1) % TASK_STATUSES.length
-        ];
+    const next = TASK_STATUSES[(idx + 1) % TASK_STATUSES.length];
 
     try {
+      const updated = await editTask(task.id, {
+        title: task.title,
+        assignee: task.assignee,
+        priority: task.priority,
+        status: next,
+        due_date: task.dueDate,
+        notes: task.notes,
+      });
 
-        const updated = await editTask(task.id, {
-
-            title: task.title,
-            assignee: task.assignee,
-            priority: task.priority,
-            status: next,
-            due_date: task.dueDate,
-            notes: task.notes
-
-        });
-
-        setTasks(updated);
-
+      setTasks(updated);
     } catch (err) {
+      console.error(err);
 
-        console.error(err);
-
-        alert("Failed to update status.");
-
+      alert("Failed to update status.");
     }
-
-};
+  };
 
   const PRIORITY_RANK = { High: 0, Medium: 1, Low: 2 };
   const STATUS_RANK = {
-  "To Do": 0,
-  "In Progress": 1,
-  "On Hold": 2,
-  Blocked: 3,
-  Done: 4
-};
+    "To Do": 0,
+    "In Progress": 1,
+    "On Hold": 2,
+    Blocked: 3,
+    Done: 4,
+  };
   const sortVal = (t, key) => {
     switch (key) {
       case "title":
@@ -795,13 +745,10 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
           >
             <option>All</option>
             {users.map((user) => (
-                <option
-                  key={user.id}
-                  value={user.name}
-                >
-                  {user.name}
-                </option>
-              ))}
+              <option key={user.id} value={user.name}>
+                {user.name}
+              </option>
+            ))}
           </select>
         </label>
         <label className="block">
@@ -1017,11 +964,7 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
         onConfirm={() => remove(confirmDelete)}
       />
 
-
-      <PipelineToast
-          toast={toast}
-          onClose={() => setToast(null)}
-        />
+      <PipelineToast toast={toast} onClose={() => setToast(null)} />
     </div>
   );
 }
@@ -1050,29 +993,28 @@ function SortTh({ label, k, sort, onSort }) {
 }
 
 function TaskForm({ task, onSave, onClose, users }) {
-
   console.log("Users:", users);
 
   const formatDate = (date) => {
-  if (!date) return "";
+    if (!date) return "";
 
-  const d = new Date(date);
+    const d = new Date(date);
 
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
 
-  return `${year}-${month}-${day}`;
-};
+    return `${year}-${month}-${day}`;
+  };
 
   const [f, setF] = useState(
-  task
-  ? {
-      ...task,
-      user_id: task.user_id || "",
-      dueDate: formatDate(task.dueDate),
-    }
-    : {
+    task
+      ? {
+          ...task,
+          user_id: task.user_id || "",
+          dueDate: formatDate(task.dueDate),
+        }
+      : {
           title: "",
           assignee: "",
           user_id: "",
@@ -1080,8 +1022,8 @@ function TaskForm({ task, onSave, onClose, users }) {
           priority: "Medium",
           dueDate: "",
           notes: "",
-      }
-);
+        },
+  );
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   console.log(task);
   return (
@@ -1098,33 +1040,30 @@ function TaskForm({ task, onSave, onClose, users }) {
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Owner">
-  <select
-    className={inputCls}
-    value={f.user_id}
-    onChange={(e) => {
-      const selected = users.find(
-        (u) => u.id === Number(e.target.value)
-      );
+            <select
+              className={inputCls}
+              value={f.user_id}
+              onChange={(e) => {
+                const selected = users.find(
+                  (u) => u.id === Number(e.target.value),
+                );
 
-      setF((prev) => ({
-        ...prev,
-        user_id: selected ? selected.id : "",
-        assignee: selected ? selected.name : "",
-      }));
-    }}
-  >
-    <option value="">Select Owner</option>
+                setF((prev) => ({
+                  ...prev,
+                  user_id: selected ? selected.id : "",
+                  assignee: selected ? selected.name : "",
+                }));
+              }}
+            >
+              <option value="">Select Owner</option>
 
-    {users.map((user) => (
-      <option
-        key={user.id}
-        value={user.id}
-      >
-        {user.name}
-      </option>
-    ))}
-  </select>
-</Field>
+              {users.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.name}
+                </option>
+              ))}
+            </select>
+          </Field>
           <Field label="Priority">
             <select
               className={inputCls}
@@ -1173,9 +1112,9 @@ function TaskForm({ task, onSave, onClose, users }) {
           </button>
           <button
             onClick={() => {
-    console.log("Saving Task:", f);
-    if (f.title.trim()) onSave(f);
-  }}
+              console.log("Saving Task:", f);
+              if (f.title.trim()) onSave(f);
+            }}
             className="rounded-md btn-primary px-4 py-2 text-xs font-medium text-white hover:bg-red-500"
           >
             {task ? "Save changes" : "Add task"}
@@ -1191,37 +1130,37 @@ function TaskForm({ task, onSave, onClose, users }) {
 function OwnersModal({ owners, setOwners, onClose }) {
   const [name, setName] = useState("");
   const add = async () => {
-  const n = name.trim();
+    const n = name.trim();
 
-  if (!n || owners.some((o) => o.name === n)) {
-    setName("");
-    return;
-  }
+    if (!n || owners.some((o) => o.name === n)) {
+      setName("");
+      return;
+    }
 
-  try {
-    const data = await createOwner({
-      name: n,
-    });
+    try {
+      const data = await createOwner({
+        name: n,
+      });
 
-    setOwners(data);
-    setName("");
-  } catch (err) {
-  console.error(err);
-  console.log(err.response?.data);
-  alert(err.response?.data?.message || err.message);
-}
-};
+      setOwners(data);
+      setName("");
+    } catch (err) {
+      console.error(err);
+      console.log(err.response?.data);
+      alert(err.response?.data?.message || err.message);
+    }
+  };
   const remove = async (id) => {
-  if (!window.confirm("Delete this owner?")) return;
+    if (!window.confirm("Delete this owner?")) return;
 
-  try {
-    const data = await removeOwner(id);
-    setOwners(data);
-  } catch (err) {
-    console.error(err);
-    alert("Failed to delete owner");
-  }
-};
+    try {
+      const data = await removeOwner(id);
+      setOwners(data);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete owner");
+    }
+  };
   return (
     <Modal title="Task owners" onClose={onClose}>
       <div className="space-y-3">
@@ -1246,20 +1185,20 @@ function OwnersModal({ owners, setOwners, onClose }) {
         </div>
         <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
           {owners.map((o) => (
-  <div
-    key={o.id}
-    className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2"
-  >
-    <span className="text-sm text-zinc-200">{o.name}</span>
+            <div
+              key={o.id}
+              className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2"
+            >
+              <span className="text-sm text-zinc-200">{o.name}</span>
 
-    <button
-      onClick={() => remove(o.id)}
-      className="rounded p-1 text-zinc-500 hover:text-red-400"
-    >
-      <Trash2 size={14} />
-    </button>
-  </div>
-))}
+              <button
+                onClick={() => remove(o.id)}
+                className="rounded p-1 text-zinc-500 hover:text-red-400"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
           {owners.length === 0 && (
             <div className="py-4 text-center text-xs text-zinc-500">
               No owners yet — add one above.
@@ -1753,7 +1692,7 @@ function RetainersView({ retainers, setRetainers }) {
         });
         const sheet = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(sheet, { raw: true, defval: "" });
-        
+
         if (rows.length === 0) {
           setImportNote(
             "That sheet looks empty. Check that the first row holds your column headers.",
@@ -1773,103 +1712,100 @@ function RetainersView({ retainers, setRetainers }) {
   };
 
   const commitImport = async (headers, rows, m) => {
-  const mapped = rows
-    .map((r) => {
-      const client = m.client ? String(r[m.client] ?? "").trim() : "";
+    const mapped = rows
+      .map((r) => {
+        const client = m.client ? String(r[m.client] ?? "").trim() : "";
 
-      if (!client) return null;
+        if (!client) return null;
 
-      return {
-        client,
-        amount: m.amount ? parseAmount(r[m.amount]) : 0,
-        startDate: m.startDate ? normDate(r[m.startDate]) : "",
-        endDate: m.endDate ? normDate(r[m.endDate]) : "",
-        status: "Active",
-      };
-    })
-    .filter(Boolean);
+        return {
+          client,
+          amount: m.amount ? parseAmount(r[m.amount]) : 0,
+          startDate: m.startDate ? normDate(r[m.startDate]) : "",
+          endDate: m.endDate ? normDate(r[m.endDate]) : "",
+          status: "Active",
+        };
+      })
+      .filter(Boolean);
 
-  setMapState(null);
+    setMapState(null);
 
-  if (mapped.length === 0) {
-    setImportNote(
-      "No client names found in the column you chose. Try a different Client column."
-    );
-    return;
-  }
-
-  try {
-    for (const r of mapped) {
-      await createRetainer({
-        client: r.client,
-        amount: r.amount,
-        start_date: r.startDate,
-        end_date: r.endDate,
-        status: r.status,
-      });
+    if (mapped.length === 0) {
+      setImportNote(
+        "No client names found in the column you chose. Try a different Client column.",
+      );
+      return;
     }
 
-    const data = await fetchRetainers();
+    try {
+      for (const r of mapped) {
+        await createRetainer({
+          client: r.client,
+          amount: r.amount,
+          start_date: r.startDate,
+          end_date: r.endDate,
+          status: r.status,
+        });
+      }
 
-    setRetainers(
-  data.map((r) => ({
-    ...r,
-    startDate: r.start_date,
-    endDate: r.end_date,
-  }))
-);
+      const data = await fetchRetainers();
 
-    setImportNote(
-      `Imported ${mapped.length} retainer${mapped.length > 1 ? "s" : ""}.`
-    );
+      setRetainers(
+        data.map((r) => ({
+          ...r,
+          startDate: r.start_date,
+          endDate: r.end_date,
+        })),
+      );
 
-    setTimeout(() => setImportNote(""), 4000);
+      setImportNote(
+        `Imported ${mapped.length} retainer${mapped.length > 1 ? "s" : ""}.`,
+      );
 
-  } catch (err) {
-    console.error(err);
-    alert("Import failed");
-  }
-};
+      setTimeout(() => setImportNote(""), 4000);
+    } catch (err) {
+      console.error(err);
+      alert("Import failed");
+    }
+  };
 
   const save = async (r) => {
-  try {
-    let data;
+    try {
+      let data;
 
-    if (r.id) {
-      data = await editRetainer(r.id, {
-        client: r.client,
-        amount: r.amount,
-        start_date: r.startDate,
-        end_date: r.endDate,
-        status: r.status,
-      });
-    } else {
-      data = await createRetainer({
-        client: r.client,
-        amount: r.amount,
-        start_date: r.startDate,
-        end_date: r.endDate,
-        status: r.status,
-      });
+      if (r.id) {
+        data = await editRetainer(r.id, {
+          client: r.client,
+          amount: r.amount,
+          start_date: r.startDate,
+          end_date: r.endDate,
+          status: r.status,
+        });
+      } else {
+        data = await createRetainer({
+          client: r.client,
+          amount: r.amount,
+          start_date: r.startDate,
+          end_date: r.endDate,
+          status: r.status,
+        });
+      }
+
+      setRetainers(
+        data.map((r) => ({
+          ...r,
+          startDate: r.start_date,
+          endDate: r.end_date,
+        })),
+      );
+
+      setShowForm(false);
+      setEditing(null);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save retainer");
     }
-
-    setRetainers(
-  data.map((r) => ({
-    ...r,
-    startDate: r.start_date,
-    endDate: r.end_date,
-  }))
-);
-
-    setShowForm(false);
-    setEditing(null);
-
-  } catch (error) {
-    console.error(error);
-    alert("Failed to save retainer");
-  }
-};
-
+  };
 
   const sorted = [...retainers].sort(
     (b, c) => (daysUntil(b.endDate) ?? 1e9) - (daysUntil(c.endDate) ?? 1e9),
@@ -2037,7 +1973,8 @@ function RetainersView({ retainers, setRetainers }) {
                         </button>
                         <button
                           onClick={async () => {
-                            if (!window.confirm("Delete this retainer?")) return;
+                            if (!window.confirm("Delete this retainer?"))
+                              return;
 
                             try {
                               const data = await removeRetainer(r.id);
@@ -2046,7 +1983,7 @@ function RetainersView({ retainers, setRetainers }) {
                                   ...r,
                                   startDate: r.start_date,
                                   endDate: r.end_date,
-                                }))
+                                })),
                               );
                             } catch (err) {
                               console.error(err);
@@ -2354,179 +2291,171 @@ function PipelineView({ leads, setLeads, owners }) {
   const [toast, setToast] = useState(null);
 
   const save = async (lead) => {
-  try {
-    let data;
+    try {
+      let data;
 
-    if (lead.id) {
-      data = await editLead(lead.id, lead);
+      if (lead.id) {
+        data = await editLead(lead.id, lead);
+        setToast({
+          type: "edit",
+          title: "Lead Updated",
+          message: `${lead.brand_name} has been updated successfully.`,
+        });
+      } else {
+        data = await createLead(lead);
+        setToast({
+          type: "add",
+          title: "Lead Added",
+          message: `${lead.brand_name} has been added successfully.`,
+        });
+      }
+
+      setLeads(data);
+      setShowForm(false);
+      setEditing(null);
+    } catch (err) {
       setToast({
-        type: "edit",
-        title: "Lead Updated",
-        message: `${lead.brand_name} has been updated successfully.`,
-      });
-    } else {
-      data = await createLead(lead);
-      setToast({
-        type: "add",
-        title: "Lead Added",
-        message: `${lead.brand_name} has been added successfully.`,
+        type: "error",
+        title: err.response?.data?.title || "Couldn't Save Lead",
+        message:
+          err.response?.data?.message ||
+          "Something went wrong. Please try again.",
       });
     }
+  };
 
-    setLeads(data);
-    setShowForm(false);
-    setEditing(null);
-  } catch (err) {
-    setToast({
-      type: "error",
-      title: err.response?.data?.title || "Couldn't Save Lead",
-      message: err.response?.data?.message || "Something went wrong. Please try again.",
-    });
-  }
-};
-  
-const move = async (lead, stage) => {
-  try {
-    const data = await editLead(lead.id, {
-      ...lead,
-      stage,
-    });
+  const move = async (lead, stage) => {
+    try {
+      const data = await editLead(lead.id, {
+        ...lead,
+        stage,
+      });
 
-    setLeads(data);
-  } catch (err) {
-    console.error(err);
-    alert("Failed to update stage");
-  }
-};
+      setLeads(data);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update stage");
+    }
+  };
 
   const addManyLeads = async (items) => {
-  try {
-    for (const lead of items.filter((l) => l._keep)) {
-      await createLead({
-        brand_name: lead.brand_name || "",
-        services: lead.services || "",
-        pitch: toDbPitch(lead.pitch),
-        deal_type: lead.deal_type || "",
-        lead_stage: lead.lead_stage || "New",
-        hot_status: lead.hot_status || "",
-        current_status: lead.current_status || "",
-        start_month: lead.start_month || "",
-        retainer_amount: Number(lead.retainer_amount) || 0,
-        annual_retainer_value: Number(lead.annual_retainer_value) || 0,
-        project_amount: Number(lead.project_amount) || 0,
-        total_annual_revenue: Number(lead.total_annual_revenue) || 0,
-        probability_closure: toPercent(lead.probability_closure),
-        probabilistic_revenue: Number(lead.probabilistic_revenue) || 0,
-        source_closed: lead.source_closed || "",
-      });
-    }
+    try {
+      for (const lead of items.filter((l) => l._keep)) {
+        await createLead({
+          brand_name: lead.brand_name || "",
+          services: lead.services || "",
+          pitch: toDbPitch(lead.pitch),
+          deal_type: lead.deal_type || "",
+          lead_stage: lead.lead_stage || "New",
+          hot_status: lead.hot_status || "",
+          current_status: lead.current_status || "",
+          start_month: lead.start_month || "",
+          retainer_amount: Number(lead.retainer_amount) || 0,
+          annual_retainer_value: Number(lead.annual_retainer_value) || 0,
+          project_amount: Number(lead.project_amount) || 0,
+          total_annual_revenue: Number(lead.total_annual_revenue) || 0,
+          probability_closure: toPercent(lead.probability_closure),
+          probabilistic_revenue: Number(lead.probabilistic_revenue) || 0,
+          source_closed: lead.source_closed || "",
+        });
+      }
 
-    const updatedLeads = await fetchPipeline();
-    setLeads(updatedLeads);
-    const count = items.filter((i) => i._keep).length;
+      const updatedLeads = await fetchPipeline();
+      setLeads(updatedLeads);
+      const count = items.filter((i) => i._keep).length;
 
-    setToast({
+      setToast({
         type: "import",
         title: "AI Import Complete",
         message: `${count} lead${count > 1 ? "s" : ""} imported successfully.`,
-    });
-    setShowAI(false);
-  } catch (err) {
-    console.error(err);
-    alert("Failed to import leads.");
-  }
-};
+      });
+      setShowAI(false);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to import leads.");
+    }
+  };
 
+  const handleExcelImport = (e) => {
+    const file = e.target.files[0];
 
-  const handleExcelImport=(e)=>{
+    if (!file) return;
 
-const file=e.target.files[0];
+    const reader = new FileReader();
 
-if(!file) return;
+    reader.onload = async (evt) => {
+      const workbook = XLSX.read(evt.target.result, {
+        type: "binary",
+      });
 
-const reader=new FileReader();
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-reader.onload=async(evt)=>{
+      const rows = XLSX.utils
+        .sheet_to_json(sheet, {
+          range: 1,
+          defval: "",
+        })
+        .map((row) => {
+          const normalized = {};
 
-const workbook=XLSX.read(evt.target.result,{
-type:"binary"
-});
+          Object.entries(row).forEach(([key, value]) => {
+            normalized[key.trim()] = value;
+          });
 
-const sheet=workbook.Sheets[workbook.SheetNames[0]];
+          return normalized;
+        });
 
-const rows = XLSX.utils
-  .sheet_to_json(sheet, {
-    range: 1,
-    defval: "",
-  })
-  .map((row) => {
-    const normalized = {};
+      const toNumber = (value) => {
+        if (!value) return 0;
 
-    Object.entries(row).forEach(([key, value]) => {
-      normalized[key.trim()] = value;
-    });
+        return (
+          Number(String(value).replace(/,/g, "").replace("%", "").trim()) || 0
+        );
+      };
+      console.log("With spaces:", rows[0][" Project Amount "]);
+      console.log("Without spaces:", rows[0]["Project Amount"]);
+      const data = rows.map((r) => ({
+        brand_name: r["Brand Name"],
+        services: r["Services"],
+        pitch: toDbPitch(r["Pitch (Y/N)"]),
+        deal_type: r["Retainer/Project"],
+        lead_stage: r["Lead Stage"],
+        hot_status: r["Hot or Not"],
+        current_status: r["Current Status"],
+        start_month: r["Start Month"],
 
-    return normalized;
-  });
+        retainer_amount: toNumber(r["Retainer Amount"]),
+        annual_retainer_value: toNumber(r["Annual Retainer Value"]),
+        project_amount: toNumber(r["Project Amount"]),
+        total_annual_revenue: toNumber(r["Total Annual Revenue"]),
+        probability_closure: toPercent(r["Probability of closure"]),
+        probabilistic_revenue: toNumber(r["Probabilistic Revenue"]),
 
+        source_closed: r["Source for Closed"],
+      }));
 
-const toNumber = (value) => {
-  if (!value) return 0;
+      const updated = await importPipeline(data);
 
-  return Number(
-    String(value)
-      .replace(/,/g, "")
-      .replace("%", "")
-      .trim()
-  ) || 0;
-};
-console.log("With spaces:", rows[0][" Project Amount "]);
-console.log("Without spaces:", rows[0]["Project Amount"]);
-const data = rows.map((r) => ({
-  brand_name: r["Brand Name"],
-  services: r["Services"],
-  pitch: toDbPitch(r["Pitch (Y/N)"]),
-  deal_type: r["Retainer/Project"],
-  lead_stage: r["Lead Stage"],
-  hot_status: r["Hot or Not"],
-  current_status: r["Current Status"],
-  start_month: r["Start Month"],
+      setLeads(updated.leads);
 
-  retainer_amount: toNumber(r["Retainer Amount"]),
-  annual_retainer_value: toNumber(r["Annual Retainer Value"]),
-  project_amount: toNumber(r["Project Amount"]),
-  total_annual_revenue: toNumber(r["Total Annual Revenue"]),
-  probability_closure: toPercent(r["Probability of closure"]),
-  probabilistic_revenue: toNumber(r["Probabilistic Revenue"]),
+      // setToast({
+      //     type: "import",
+      //     title: "Excel Imported",
+      //     message: `${data.length} lead${data.length > 1 ? "s" : ""} imported successfully into the pipeline.`,
+      // });
 
-  source_closed: r["Source for Closed"],
-}));
+      setToast({
+        type: "import",
+        title: "Excel Imported",
+        message:
+          updated.skipped.length > 0
+            ? `${updated.insertedCount} lead${updated.insertedCount !== 1 ? "s" : ""} imported. ${updated.skipped.length} duplicate${updated.skipped.length !== 1 ? "s" : ""} skipped.`
+            : `${updated.insertedCount} lead${updated.insertedCount !== 1 ? "s" : ""} imported successfully into the pipeline.`,
+      });
+    };
 
-
-const updated = await importPipeline(data);
-
-setLeads(updated.leads);
-
-// setToast({
-//     type: "import",
-//     title: "Excel Imported",
-//     message: `${data.length} lead${data.length > 1 ? "s" : ""} imported successfully into the pipeline.`,
-// });
-
-setToast({
-  type: "import",
-  title: "Excel Imported",
-  message:
-    updated.skipped.length > 0
-      ? `${updated.insertedCount} lead${updated.insertedCount !== 1 ? "s" : ""} imported. ${updated.skipped.length} duplicate${updated.skipped.length !== 1 ? "s" : ""} skipped.`
-      : `${updated.insertedCount} lead${updated.insertedCount !== 1 ? "s" : ""} imported successfully into the pipeline.`,
-});
-
-};
-
-reader.readAsBinaryString(file);
-
-};
+    reader.readAsBinaryString(file);
+  };
 
   return (
     <div>
@@ -2546,16 +2475,15 @@ reader.readAsBinaryString(file);
             <Sparkles size={14} /> Import from image
           </button>
           <label className="flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-200 hover:bg-zinc-800 cursor-pointer">
-            <Upload size={15}/>
+            <Upload size={15} />
             Import Excel
-
             <input
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                hidden
-                onChange={handleExcelImport}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              hidden
+              onChange={handleExcelImport}
             />
-        </label>
+          </label>
           <button
             onClick={() => {
               setEditing(null);
@@ -2567,6 +2495,8 @@ reader.readAsBinaryString(file);
           </button>
         </div>
       </div>
+
+      <PipelineStats leads={leads} />
 
       <LeadCard
         leads={leads}
@@ -2594,10 +2524,7 @@ reader.readAsBinaryString(file);
         />
       )}
 
-      <PipelineToast
-          toast={toast}
-          onClose={() => setToast(null)}
-      />
+      <PipelineToast toast={toast} onClose={() => setToast(null)} />
     </div>
   );
 }
@@ -2619,7 +2546,9 @@ const toPercent = (value) => {
 };
 
 const toDbPitch = (value) => {
-  const v = String(value || "").trim().toLowerCase();
+  const v = String(value || "")
+    .trim()
+    .toLowerCase();
   if (v === "yes" || v === "y") return "Y";
   if (v === "no" || v === "n") return "N";
   return null; // enum column allows NULL — don't force an invalid value in
@@ -2667,19 +2596,17 @@ const hotTone = (v) => {
 
 const stageTone = (v) => {
   const map = {
-    "New": "zinc",
+    New: "zinc",
     "Reached Out": "blue",
     "Proposal Shared": "indigo",
-    "Negotiation": "amber",
+    Negotiation: "amber",
     "Client's Final Response Awaited": "orange",
-    "Closed": "teal",
-    "Won": "green",
-    "Lost": "red",
+    Closed: "teal",
+    Won: "green",
+    Lost: "red",
   };
   return map[v] || "zinc";
 };
-
-
 
 // --- main table ---
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -2696,8 +2623,12 @@ function LeadCard({ leads, setLeads, setEditing, setShowForm }) {
   const [sort, setSort] = useState({ key: null, dir: "asc" });
 
   // distinct values for filter dropdowns, derived from actual data
-  const stageOptions = [...new Set(leads.map((l) => l.lead_stage).filter(Boolean))];
-  const hotOptions = [...new Set(leads.map((l) => l.current_status).filter(Boolean))];
+  const stageOptions = [
+    ...new Set(leads.map((l) => l.lead_stage).filter(Boolean)),
+  ];
+  const hotOptions = [
+    ...new Set(leads.map((l) => l.current_status).filter(Boolean)),
+  ];
 
   const filtered = leads.filter((l) => {
     const q = search.trim().toLowerCase();
@@ -2715,33 +2646,33 @@ function LeadCard({ leads, setLeads, setEditing, setShowForm }) {
   });
 
   const sorted = [...filtered].sort((a, b) => {
-  if (!sort.key) return 0;
+    if (!sort.key) return 0;
 
-  let av = a[sort.key];
-  let bv = b[sort.key];
+    let av = a[sort.key];
+    let bv = b[sort.key];
 
-  // Handle null/undefined
-  if (av == null) av = "";
-  if (bv == null) bv = "";
+    // Handle null/undefined
+    if (av == null) av = "";
+    if (bv == null) bv = "";
 
-  // Number comparison
-  if (typeof av === "number" && typeof bv === "number") {
-    return sort.dir === "asc" ? av - bv : bv - av;
-  }
+    // Number comparison
+    if (typeof av === "number" && typeof bv === "number") {
+      return sort.dir === "asc" ? av - bv : bv - av;
+    }
 
-  // String comparison
-  av = String(av).toLowerCase();
-  bv = String(bv).toLowerCase();
+    // String comparison
+    av = String(av).toLowerCase();
+    bv = String(bv).toLowerCase();
 
-  if (av < bv) return sort.dir === "asc" ? -1 : 1;
-  if (av > bv) return sort.dir === "asc" ? 1 : -1;
-  return 0;
-});
+    if (av < bv) return sort.dir === "asc" ? -1 : 1;
+    if (av > bv) return sort.dir === "asc" ? 1 : -1;
+    return 0;
+  });
 
-const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-const safePage = Math.min(page, totalPages);
-const start = (safePage - 1) * pageSize;
-const pageRows = sorted.slice(start, start + pageSize);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * pageSize;
+  const pageRows = sorted.slice(start, start + pageSize);
 
   // reset to page 1 whenever the filtered set changes shape
   useEffect(() => {
@@ -2758,36 +2689,36 @@ const pageRows = sorted.slice(start, start + pageSize);
   const hasActiveFilters = search || stageFilter || pitchFilter || hotFilter;
 
   function SortTh({ label, k, sort, onSort, align = "left" }) {
-  const active = sort.key === k;
+    const active = sort.key === k;
 
-  return (
-    <th
-      className={`px-4 py-2.5 font-medium ${
-        align === "right" ? "text-right" : "text-left"
-      }`}
-    >
-      <button
-        onClick={() => onSort(k)}
-        className={`inline-flex items-center gap-1 ${
-          align === "right" ? "justify-end w-full" : ""
-        } ${active ? "text-zinc-200" : ""}`}
+    return (
+      <th
+        className={`px-4 py-2.5 font-medium ${
+          align === "right" ? "text-right" : "text-left"
+        }`}
       >
-        {label}
-        {active ? (
-          sort.dir === "asc" ? (
-            <ChevronUp size={12} />
+        <button
+          onClick={() => onSort(k)}
+          className={`inline-flex items-center gap-1 ${
+            align === "right" ? "justify-end w-full" : ""
+          } ${active ? "text-zinc-200" : ""}`}
+        >
+          {label}
+          {active ? (
+            sort.dir === "asc" ? (
+              <ChevronUp size={12} />
+            ) : (
+              <ChevronDown size={12} />
+            )
           ) : (
-            <ChevronDown size={12} />
-          )
-        ) : (
-          <ArrowUpDown size={11} className="opacity-40" />
-        )}
-      </button>
-    </th>
-  );
-}
+            <ArrowUpDown size={11} className="opacity-40" />
+          )}
+        </button>
+      </th>
+    );
+  }
 
-const toggleSort = (key) =>
+  const toggleSort = (key) =>
     setSort((s) =>
       s.key === key
         ? { key, dir: s.dir === "asc" ? "desc" : "asc" }
@@ -2819,13 +2750,17 @@ const toggleSort = (key) =>
         >
           <option value="">All stages</option>
           {stageOptions.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>
+              {s}
+            </option>
           ))}
         </select>
 
-        
-
-        <select value={pitchFilter} onChange={(e) => setPitchFilter(e.target.value)} className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500">
+        <select
+          value={pitchFilter}
+          onChange={(e) => setPitchFilter(e.target.value)}
+          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+        >
           <option value="">All pitch</option>
           <option value="Y">Pitch: Yes</option>
           <option value="N">Pitch: No</option>
@@ -2838,7 +2773,9 @@ const toggleSort = (key) =>
         >
           <option value="">All hot status</option>
           {hotOptions.map((h) => (
-            <option key={h} value={h}>{h}</option>
+            <option key={h} value={h}>
+              {h}
+            </option>
           ))}
         </select>
 
@@ -2859,7 +2796,9 @@ const toggleSort = (key) =>
             className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
           >
             {PAGE_SIZE_OPTIONS.map((n) => (
-              <option key={n} value={n}>{n}</option>
+              <option key={n} value={n}>
+                {n}
+              </option>
             ))}
           </select>
         </div>
@@ -2867,20 +2806,61 @@ const toggleSort = (key) =>
 
       {/* table */}
       <div className="overflow-hidden rounded-xl border border-zinc-800">
-          <table className="w-full text-sm">
-            <thead className="bg-zinc-900 text-left text-[11px] uppercase tracking-wider text-zinc-500">
+        <table className="w-full text-sm">
+          <thead className="bg-zinc-900 text-left text-[11px] uppercase tracking-wider text-zinc-500">
             <tr>
               <th className="px-3 py-2"></th>
 
-              <SortTh label="Brand" k="brand_name" sort={sort} onSort={toggleSort} />
-              <SortTh label="Services" k="services" sort={sort} onSort={toggleSort} />
+              <SortTh
+                label="Brand"
+                k="brand_name"
+                sort={sort}
+                onSort={toggleSort}
+              />
+              <SortTh
+                label="Services"
+                k="services"
+                sort={sort}
+                onSort={toggleSort}
+              />
               <SortTh label="Pitch" k="pitch" sort={sort} onSort={toggleSort} />
-              <SortTh label="Type" k="deal_type" sort={sort} onSort={toggleSort} />
-              <SortTh label="Stage" k="lead_stage" sort={sort} onSort={toggleSort} />
-              <SortTh label="Status" k="current_status" sort={sort} onSort={toggleSort} />
-              <SortTh label="Hot" k="hot_status" sort={sort} onSort={toggleSort} />
-              <SortTh label="Start" k="start_month" sort={sort} onSort={toggleSort} />
-              <SortTh label="Revenue" k="total_annual_revenue" sort={sort} onSort={toggleSort} align="right" />
+              <SortTh
+                label="Type"
+                k="deal_type"
+                sort={sort}
+                onSort={toggleSort}
+              />
+              <SortTh
+                label="Stage"
+                k="lead_stage"
+                sort={sort}
+                onSort={toggleSort}
+              />
+              <SortTh
+                label="Status"
+                k="current_status"
+                sort={sort}
+                onSort={toggleSort}
+              />
+              <SortTh
+                label="Hot"
+                k="hot_status"
+                sort={sort}
+                onSort={toggleSort}
+              />
+              <SortTh
+                label="Start"
+                k="start_month"
+                sort={sort}
+                onSort={toggleSort}
+              />
+              <SortTh
+                label="Revenue"
+                k="total_annual_revenue"
+                sort={sort}
+                onSort={toggleSort}
+                align="right"
+              />
               <th className="px-3 py-2">Actions</th>
             </tr>
           </thead>
@@ -2902,17 +2882,29 @@ const toggleSort = (key) =>
                     <td className="px-3 py-2 font-medium">{lead.brand_name}</td>
                     <td className="px-3 py-2 text-zinc-400">{lead.services}</td>
                     <td className="px-3 py-2">
-                      <Badge tone={pitchTone(lead.pitch)}>{fromDbPitch(lead.pitch)}</Badge>
+                      <Badge tone={pitchTone(lead.pitch)}>
+                        {fromDbPitch(lead.pitch)}
+                      </Badge>
                     </td>
-                    <td className="px-3 py-2 text-zinc-400">{lead.deal_type}</td>
+                    <td className="px-3 py-2 text-zinc-400">
+                      {lead.deal_type}
+                    </td>
                     <td className="px-3 py-2">
-                      <Badge tone={stageTone(lead.lead_stage)}>{lead.lead_stage || "—"}</Badge>
+                      <Badge tone={stageTone(lead.lead_stage)}>
+                        {lead.lead_stage || "—"}
+                      </Badge>
                     </td>
-                    <td className="px-3 py-2 text-zinc-400">{lead.current_status}</td>
+                    <td className="px-3 py-2 text-zinc-400">
+                      {lead.current_status}
+                    </td>
                     <td className="px-3 py-2">
-                      <Badge tone={hotTone(lead.hot_status)}>{lead.hot_status || "—"}</Badge>
+                      <Badge tone={hotTone(lead.hot_status)}>
+                        {lead.hot_status || "—"}
+                      </Badge>
                     </td>
-                    <td className="px-3 py-2 text-zinc-400">{lead.start_month || "—"}</td>
+                    <td className="px-3 py-2 text-zinc-400">
+                      {lead.start_month || "—"}
+                    </td>
                     <td className="px-3 py-2 text-right font-medium">
                       {inr(lead.total_annual_revenue)}
                     </td>
@@ -2935,9 +2927,9 @@ const toggleSort = (key) =>
                             const data = await removeLead(lead.id);
                             setLeads(data);
                             setToast({
-                                type: "delete",
-                                title: "Lead Deleted",
-                                message: `${brand} has been removed from the pipeline.`,
+                              type: "delete",
+                              title: "Lead Deleted",
+                              message: `${brand} has been removed from the pipeline.`,
                             });
                           }}
                         >
@@ -2952,23 +2944,41 @@ const toggleSort = (key) =>
                       <td colSpan={11} className="px-6 py-4">
                         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                           <div>
-                            <p className="text-[11px] uppercase text-zinc-500">Retainer Amount</p>
-                            <p className="text-sm font-medium">{inr(lead.retainer_amount)}</p>
+                            <p className="text-[11px] uppercase text-zinc-500">
+                              Retainer Amount
+                            </p>
+                            <p className="text-sm font-medium">
+                              {inr(lead.retainer_amount)}
+                            </p>
                           </div>
                           <div>
-                            <p className="text-[11px] uppercase text-zinc-500">Annual Retainer Value</p>
-                            <p className="text-sm font-medium">{inr(lead.annual_retainer_value)}</p>
+                            <p className="text-[11px] uppercase text-zinc-500">
+                              Annual Retainer Value
+                            </p>
+                            <p className="text-sm font-medium">
+                              {inr(lead.annual_retainer_value)}
+                            </p>
                           </div>
                           <div>
-                            <p className="text-[11px] uppercase text-zinc-500">Project Amount</p>
-                            <p className="text-sm font-medium">{inr(lead.project_amount)}</p>
+                            <p className="text-[11px] uppercase text-zinc-500">
+                              Project Amount
+                            </p>
+                            <p className="text-sm font-medium">
+                              {inr(lead.project_amount)}
+                            </p>
                           </div>
                           <div>
-                            <p className="text-[11px] uppercase text-zinc-500">Probabilistic Revenue</p>
-                            <p className="text-sm font-medium">{inr(lead.probabilistic_revenue)}</p>
+                            <p className="text-[11px] uppercase text-zinc-500">
+                              Probabilistic Revenue
+                            </p>
+                            <p className="text-sm font-medium">
+                              {inr(lead.probabilistic_revenue)}
+                            </p>
                           </div>
                           <div className="col-span-2 sm:col-span-2">
-                            <p className="text-[11px] uppercase text-zinc-500">Probability of Closure</p>
+                            <p className="text-[11px] uppercase text-zinc-500">
+                              Probability of Closure
+                            </p>
                             <div className="mt-1 flex items-center gap-2">
                               <div className="h-1.5 w-32 overflow-hidden rounded-full bg-zinc-800">
                                 <div
@@ -2979,12 +2989,18 @@ const toggleSort = (key) =>
                                   }}
                                 />
                               </div>
-                              <span className="text-sm">{lead.probability_closure || 0}%</span>
+                              <span className="text-sm">
+                                {lead.probability_closure || 0}%
+                              </span>
                             </div>
                           </div>
                           <div className="col-span-2 sm:col-span-2">
-                            <p className="text-[11px] uppercase text-zinc-500">Source for Closed</p>
-                            <p className="text-sm font-medium">{lead.source_closed || "—"}</p>
+                            <p className="text-[11px] uppercase text-zinc-500">
+                              Source for Closed
+                            </p>
+                            <p className="text-sm font-medium">
+                              {lead.source_closed || "—"}
+                            </p>
                           </div>
                         </div>
                       </td>
@@ -2996,7 +3012,10 @@ const toggleSort = (key) =>
 
             {pageRows.length === 0 && (
               <tr>
-                <td colSpan={11} className="px-3 py-8 text-center text-zinc-500">
+                <td
+                  colSpan={11}
+                  className="px-3 py-8 text-center text-zinc-500"
+                >
                   {leads.length === 0
                     ? "No leads yet — add one or import from Excel."
                     : "No leads match your search/filters."}
@@ -3012,7 +3031,9 @@ const toggleSort = (key) =>
         <span>
           Showing {filtered.length === 0 ? 0 : start + 1}–
           {Math.min(start + pageSize, filtered.length)} of {filtered.length}
-          {leads.length !== filtered.length ? ` (filtered from ${leads.length})` : ""}
+          {leads.length !== filtered.length
+            ? ` (filtered from ${leads.length})`
+            : ""}
         </span>
 
         <div className="flex items-center gap-1">
@@ -3050,6 +3071,93 @@ function SectionHeader({ icon: Icon, title }) {
   );
 }
 
+function StatCard({ icon: Icon, label, value, sub, tone = "zinc" }) {
+  const tones = {
+    zinc: "text-zinc-300 bg-zinc-500/10 border-zinc-500/20",
+    green: "text-green-400 bg-green-500/10 border-green-500/20",
+    red: "text-red-400 bg-red-500/10 border-red-500/20",
+    amber: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+    blue: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+    purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] uppercase tracking-wider text-zinc-500">
+          {label}
+        </p>
+        <div className={`flex h-7 w-7 items-center justify-center rounded-lg border ${tones[tone]}`}>
+          <Icon size={14} />
+        </div>
+      </div>
+      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+      {sub && <p className="mt-0.5 text-xs text-zinc-500">{sub}</p>}
+    </div>
+  );
+}
+
+function PipelineStats({ leads }) {
+  const total = leads.length;
+
+  const pitchYes = leads.filter((l) => l.pitch === "Y").length;
+  const pitchNo = leads.filter((l) => l.pitch === "N").length;
+  const pitchPending = total - pitchYes - pitchNo;
+
+  const retainerCount = leads.filter((l) => l.deal_type === "Retainer").length;
+  const projectCount = leads.filter((l) => l.deal_type === "Project").length;
+
+  const wonCount = leads.filter((l) => l.lead_stage === "Won").length;
+  const lostCount = leads.filter((l) => l.lead_stage === "Lost").length;
+
+  const totalRevenue = leads.reduce(
+    (sum, l) => sum + (Number(l.total_annual_revenue) || 0),
+    0,
+  );
+
+  return (
+    <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <StatCard
+        icon={Building2}
+        label="Total Brands"
+        value={total}
+        tone="zinc"
+      />
+      <StatCard
+        icon={CheckCircle2}
+        label="Pitch Done"
+        value={pitchYes}
+        sub={`${pitchNo} not pitched`}
+        tone="green"
+      />
+      <StatCard
+        icon={Repeat}
+        label="Retainers"
+        value={retainerCount}
+        tone="blue"
+      />
+      <StatCard
+        icon={Briefcase}
+        label="Projects"
+        value={projectCount}
+        tone="purple"
+      />
+      <StatCard
+        icon={Trophy}
+        label="Won / Lost"
+        value={`${wonCount} / ${lostCount}`}
+        tone="amber"
+      />
+      <StatCard
+        icon={Wallet}
+        label="Total Revenue"
+        value={inr(totalRevenue)}
+        tone="green"
+      />
+    </div>
+  );
+}
+
 function LeadForm({ lead, onSave, onClose }) {
   const [f, setF] = useState(
     lead || {
@@ -3068,7 +3176,7 @@ function LeadForm({ lead, onSave, onClose }) {
       probability_closure: 0,
       probabilistic_revenue: 0,
       source_closed: "",
-    }
+    },
   );
 
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
@@ -3087,13 +3195,12 @@ function LeadForm({ lead, onSave, onClose }) {
     f.probability_closure >= 70
       ? "text-green-400"
       : f.probability_closure >= 40
-      ? "text-amber-400"
-      : "text-zinc-400";
+        ? "text-amber-400"
+        : "text-zinc-400";
 
   return (
     <Modal title={lead ? "Edit Lead" : "New Lead"} onClose={onClose}>
       <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-1">
-
         {/* --- Lead details --- */}
         <div>
           <SectionHeader icon={Building2} title="Lead Details" />
@@ -3171,7 +3278,20 @@ function LeadForm({ lead, onSave, onClose }) {
                 onChange={(e) => set("start_month", e.target.value)}
               >
                 <option value="">Select Month</option>
-                {["January","February","March","April","May","June","July","August","September","October","November","December"].map((m) => (
+                {[
+                  "January",
+                  "February",
+                  "March",
+                  "April",
+                  "May",
+                  "June",
+                  "July",
+                  "August",
+                  "September",
+                  "October",
+                  "November",
+                  "December",
+                ].map((m) => (
                   <option key={m}>{m}</option>
                 ))}
               </select>
@@ -3189,8 +3309,8 @@ function LeadForm({ lead, onSave, onClose }) {
                         ? opt === "Hot"
                           ? "border-red-500/50 bg-red-500/10 text-red-400"
                           : opt === "Warm"
-                          ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
-                          : "border-blue-500/50 bg-blue-500/10 text-blue-400"
+                            ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
+                            : "border-blue-500/50 bg-blue-500/10 text-blue-400"
                         : "border-zinc-700 text-zinc-500 hover:border-zinc-600"
                     }`}
                   >
@@ -3212,8 +3332,8 @@ function LeadForm({ lead, onSave, onClose }) {
                         ? opt === "Hot"
                           ? "border-red-500/50 bg-red-500/10 text-red-400"
                           : opt === "Warm"
-                          ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
-                          : "border-blue-500/50 bg-blue-500/10 text-blue-400"
+                            ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
+                            : "border-blue-500/50 bg-blue-500/10 text-blue-400"
                         : "border-zinc-700 text-zinc-500 hover:border-zinc-600"
                     }`}
                   >
@@ -3231,48 +3351,64 @@ function LeadForm({ lead, onSave, onClose }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="Retainer Amount">
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">₹</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">
+                  ₹
+                </span>
                 <input
                   type="number"
                   className={`${inputCls} pl-7`}
                   value={f.retainer_amount}
-                  onChange={(e) => set("retainer_amount", Number(e.target.value))}
+                  onChange={(e) =>
+                    set("retainer_amount", Number(e.target.value))
+                  }
                 />
               </div>
             </Field>
 
             <Field label="Annual Retainer Value">
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">₹</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">
+                  ₹
+                </span>
                 <input
                   type="number"
                   className={`${inputCls} pl-7`}
                   value={f.annual_retainer_value}
-                  onChange={(e) => set("annual_retainer_value", Number(e.target.value))}
+                  onChange={(e) =>
+                    set("annual_retainer_value", Number(e.target.value))
+                  }
                 />
               </div>
             </Field>
 
             <Field label="Project Amount">
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">₹</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">
+                  ₹
+                </span>
                 <input
                   type="number"
                   className={`${inputCls} pl-7`}
                   value={f.project_amount}
-                  onChange={(e) => set("project_amount", Number(e.target.value))}
+                  onChange={(e) =>
+                    set("project_amount", Number(e.target.value))
+                  }
                 />
               </div>
             </Field>
 
             <Field label="Total Annual Revenue">
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">₹</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">
+                  ₹
+                </span>
                 <input
                   type="number"
                   className={`${inputCls} pl-7 font-medium`}
                   value={f.total_annual_revenue}
-                  onChange={(e) => set("total_annual_revenue", Number(e.target.value))}
+                  onChange={(e) =>
+                    set("total_annual_revenue", Number(e.target.value))
+                  }
                 />
               </div>
             </Field>
@@ -3300,17 +3436,23 @@ function LeadForm({ lead, onSave, onClose }) {
                 max={100}
                 step={5}
                 value={f.probability_closure}
-                onChange={(e) => set("probability_closure", Number(e.target.value))}
+                onChange={(e) =>
+                  set("probability_closure", Number(e.target.value))
+                }
                 className="flex-1 accent-red-500"
               />
-              <span className={`w-12 text-right text-sm font-semibold ${probColor}`}>
+              <span
+                className={`w-12 text-right text-sm font-semibold ${probColor}`}
+              >
                 {f.probability_closure}%
               </span>
             </div>
           </Field>
 
           <div className="mt-3 flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-3">
-            <span className="text-xs text-zinc-500">Probabilistic Revenue (auto-calculated)</span>
+            <span className="text-xs text-zinc-500">
+              Probabilistic Revenue (auto-calculated)
+            </span>
             <span className="text-sm font-semibold text-zinc-100">
               ₹{Math.round(f.probabilistic_revenue).toLocaleString("en-IN")}
             </span>
