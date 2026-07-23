@@ -5,10 +5,13 @@ import AdminLogin from "./pages/AdminLogin";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Settings from "./pages/Settings";
+import Footer from "./components/Footer";
 
 function App() {
 
     return (
+
+        <>
 
       
 
@@ -40,7 +43,8 @@ function App() {
             />
 
         </Routes>
-        
+        <Footer/>
+        </>
       
     );
 

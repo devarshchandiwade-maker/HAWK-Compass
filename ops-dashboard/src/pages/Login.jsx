@@ -97,11 +97,11 @@ function CompassMark({ size = 32 }) {
           By continuing you agree to our terms of use.
         </p>
 
-        <p className="mt-2 text-center text-xs text-slate-500">
+        {/* <p className="mt-2 text-center text-xs text-slate-500">
           All copyright reserved &copy; {new Date().getFullYear()}. Powered by{" "}
           <span className="font-semibold text-red-500">Gozoop</span>{" "}
           <span className="font-semibold text-white">Group</span>
-        </p>
+        </p> */}
       </div>
     </div>
   );
