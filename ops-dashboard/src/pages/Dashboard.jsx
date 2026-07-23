@@ -2726,6 +2726,29 @@ function LeadCard({ leads, setLeads, setEditing, setShowForm }) {
 
   const hasActiveFilters = search || stageFilter || pitchFilter || hotFilter;
 
+  function SortTh({ label, k, sort, onSort }) {
+  const active = sort.key === k;
+  return (
+    <th className="px-4 py-2.5 font-medium">
+      <button
+        onClick={() => onSort(k)}
+        className={`flex items-center gap-1 uppercase tracking-wider transition hover:text-zinc-300 ${active ? "text-zinc-200" : ""}`}
+      >
+        {label}
+        {active ? (
+          sort.dir === "asc" ? (
+            <ChevronUp size={12} />
+          ) : (
+            <ChevronDown size={12} />
+          )
+        ) : (
+          <ArrowUpDown size={11} className="opacity-40" />
+        )}
+      </button>
+    </th>
+  );
+}
+
   return (
     <div className="space-y-3">
       {/* toolbar */}
@@ -2803,15 +2826,16 @@ function LeadCard({ leads, setLeads, setEditing, setShowForm }) {
             <thead className="bg-zinc-900 text-left text-[11px] uppercase tracking-wider text-zinc-500">
             <tr>
               <th className="px-3 py-2"></th>
-              <th className="px-3 py-2">Brand</th>
-              <th className="px-3 py-2">Services</th>
-              <th className="px-3 py-2">Pitch</th>
-              <th className="px-3 py-2">Type</th>
-              <th className="px-3 py-2">Stage</th>
-              <th className="px-3 py-2">Status</th>
-              <th className="px-3 py-2">Hot</th>
-              <th className="px-3 py-2">Start</th>
-              <th className="px-3 py-2 text-right">Revenue</th>
+
+              <SortTh label="Brand" k="brand_name" sort={sort} onSort={toggleSort} />
+              <SortTh label="Services" k="services" sort={sort} onSort={toggleSort} />
+              <SortTh label="Pitch" k="pitch" sort={sort} onSort={toggleSort} />
+              <SortTh label="Type" k="deal_type" sort={sort} onSort={toggleSort} />
+              <SortTh label="Stage" k="lead_stage" sort={sort} onSort={toggleSort} />
+              <SortTh label="Status" k="current_status" sort={sort} onSort={toggleSort} />
+              <SortTh label="Hot" k="hot_status" sort={sort} onSort={toggleSort} />
+              <SortTh label="Start" k="start_month" sort={sort} onSort={toggleSort} />
+              <SortTh label="Revenue" k="total_annual_revenue" sort={sort} onSort={toggleSort} align="right" />
               <th className="px-3 py-2">Actions</th>
             </tr>
           </thead>
