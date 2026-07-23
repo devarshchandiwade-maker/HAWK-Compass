@@ -1867,7 +1867,7 @@ function RetainersView({ retainers, setRetainers }) {
 
 
   const sorted = [...retainers].sort(
-    (a, b) => (daysUntil(a.endDate) ?? 1e9) - (daysUntil(b.endDate) ?? 1e9),
+    (b, c) => (daysUntil(b.endDate) ?? 1e9) - (daysUntil(c.endDate) ?? 1e9),
   );
   const totalMRR = retainers.reduce((s, r) => s + (Number(r.amount) || 0), 0);
   const endingSoon = retainers.filter((r) => {
