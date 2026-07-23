@@ -2,6 +2,7 @@ import { useState } from "react";
 import { adminLogin } from "../api/adminApi";
 import { useNavigate } from "react-router-dom";
 import { ShieldCheck, Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import Footer from "../components/Footer";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ function CompassMark({ size = 32 }) {
 }
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-[#09090b] px-4 text-slate-100">
+    <div className="flex min-h-screen items-center justify-center bg-[#09090b] px-4 text-slate-100">
       <div className="w-full max-w-sm">
         {/* Brand mark */}
         <div className="mb-6 flex flex-col items-center text-center">
@@ -157,6 +158,8 @@ function CompassMark({ size = 32 }) {
           <span className="font-semibold text-white">Group</span>
         </p> */}
       </div>
+
+      <Footer/>
     </div>
   );
 }
