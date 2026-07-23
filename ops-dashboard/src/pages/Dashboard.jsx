@@ -2607,7 +2607,7 @@ const toDbPitch = (value) => {
   return null; // enum column allows NULL — don't force an invalid value in
 };
 
-const fromDbPitch = (value) => (value === "Y" ? "Yes" : value === "N" ? "No" : "—");
+const fromDbPitch = (v) => (v === "Y" ? "Yes" : v === "N" ? "No" : "—");
 
 const inr = (n) =>
   new Intl.NumberFormat("en-IN", {
