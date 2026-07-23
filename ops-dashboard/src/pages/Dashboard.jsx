@@ -104,8 +104,8 @@ const store = {
   async set(key, value) {
     try {
       await window.storage.set(key, JSON.stringify(value));
-    } catch (error) {
-      console.error("storage set failed", error);
+    } catch (e) {
+      console.error("storage set failed", e);
     }
   },
 };
