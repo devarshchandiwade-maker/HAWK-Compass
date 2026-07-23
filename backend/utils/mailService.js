@@ -68,7 +68,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 async function sendTaskMail(email, name, task) {
     try {
         const data = await resend.emails.send({
-            from: "Compass Dashboard <notifications@mail.gozoop.com>",
+            from: "Compass Dashboard <hawk-compass@gozoop.com>",
             to: email,
             subject: `Task Assigned: ${task.title}`,
             html: `
