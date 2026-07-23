@@ -41,6 +41,10 @@ import {
   TrendingUp,
   TrendingDown,
   ClipboardPaste,
+  Building2, 
+  Tag, 
+  IndianRupee, 
+  TrendingUp
 } from "lucide-react";
 import {
   fetchTasks,
@@ -2947,6 +2951,17 @@ function LeadCard({ leads, setLeads, setEditing, setShowForm }) {
   );
 }
 
+function SectionHeader({ icon: Icon, title }) {
+  return (
+    <div className="flex items-center gap-2 pb-3 mb-1 border-b border-zinc-800">
+      <Icon size={15} className="text-zinc-500" />
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+        {title}
+      </h3>
+    </div>
+  );
+}
+
 function LeadForm({ lead, onSave, onClose }) {
   const [f, setF] = useState(
     lead || {
@@ -2971,212 +2986,250 @@ function LeadForm({ lead, onSave, onClose }) {
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
 
   useEffect(() => {
-  setF((prev) => ({
-    ...prev,
-    probabilistic_revenue:
-      ((Number(prev.total_annual_revenue) || 0) *
-        (Number(prev.probability_closure) || 0)) /
-      100,
-  }));
-}, [f.total_annual_revenue, f.probability_closure]);
+    setF((prev) => ({
+      ...prev,
+      probabilistic_revenue:
+        ((Number(prev.total_annual_revenue) || 0) *
+          (Number(prev.probability_closure) || 0)) /
+        100,
+    }));
+  }, [f.total_annual_revenue, f.probability_closure]);
+
+  const probColor =
+    f.probability_closure >= 70
+      ? "text-green-400"
+      : f.probability_closure >= 40
+      ? "text-amber-400"
+      : "text-zinc-400";
 
   return (
     <Modal title={lead ? "Edit Lead" : "New Lead"} onClose={onClose}>
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-1">
 
-          <Field label="Brand Name">
-            <input
-              className={inputCls}
-              value={f.brand_name}
-              onChange={(e) => set("brand_name", e.target.value)}
-            />
-          </Field>
+        {/* --- Lead details --- */}
+        <div>
+          <SectionHeader icon={Building2} title="Lead Details" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Brand Name">
+              <input
+                className={inputCls}
+                placeholder="e.g. Reliance Foundation Hospital"
+                value={f.brand_name}
+                onChange={(e) => set("brand_name", e.target.value)}
+              />
+            </Field>
 
-          <Field label="Services">
-            <input
-              className={inputCls}
-              value={f.services}
-              onChange={(e) => set("services", e.target.value)}
-            />
-          </Field>
+            <Field label="Services">
+              <input
+                className={inputCls}
+                placeholder="e.g. ORM, Media"
+                value={f.services}
+                onChange={(e) => set("services", e.target.value)}
+              />
+            </Field>
 
-          <Field label="Pitch">
-            <select
-              className={inputCls}
-              value={f.pitch}
-              onChange={(e) => set("pitch", e.target.value)}
-            >
-              <option value="">Select Pitch</option>
-              <option value="Y">Yes</option>
-              <option value="N">No</option>
-            </select>
-          </Field>
+            <Field label="Pitch">
+              <select
+                className={inputCls}
+                value={f.pitch}
+                onChange={(e) => set("pitch", e.target.value)}
+              >
+                <option value="">Select Pitch</option>
+                <option value="Y">Yes</option>
+                <option value="N">No</option>
+              </select>
+            </Field>
 
-          <Field label="Deal Type">
-            <select
-              className={inputCls}
-              value={f.deal_type}
-              onChange={(e) => set("deal_type", e.target.value)}
-            >
-              <option value="">Select Type</option>
-              <option value="Retainer">Retainer</option>
-              <option value="Project">Project</option>
-            </select>
-          </Field>
-
-          <Field label="Lead Stage">
-            <select
-              className={inputCls}
-              value={f.lead_stage}
-              onChange={(e) => set("lead_stage", e.target.value)}
-            >
-              <option value="">Select Stage</option>
-              <option>New</option>
-              <option>Reached Out</option>
-              <option>Proposal Shared</option>
-              <option>Negotiation</option>
-              <option>Client's Final Response Awaited</option>
-              <option>Closed</option>
-              <option>Won</option>
-              <option>Lost</option>
-            </select>
-          </Field>
-
-          <Field label="Hot Status">
-            <select
-              className={inputCls}
-              value={f.hot_status}
-              onChange={(e) => set("hot_status", e.target.value)}
-            >
-              <option value="">Select</option>
-              <option>Hot</option>
-              <option>Warm</option>
-              <option>Cold</option>
-            </select>
-          </Field>
-
-          <Field label="Current Status">
-            <select
-              className={inputCls}
-              value={f.current_status}
-              onChange={(e) => set("current_status", e.target.value)}
-            >
-              <option value="">Select</option>
-              <option>Hot</option>
-              <option>Warm</option>
-              <option>Cold</option>
-            </select>
-          </Field>
-
-          <Field label="Start Month">
-            <select
-              className={inputCls}
-              value={f.start_month}
-              onChange={(e) => set("start_month", e.target.value)}
-            >
-              <option value="">Select Month</option>
-              <option>January</option>
-              <option>February</option>
-              <option>March</option>
-              <option>April</option>
-              <option>May</option>
-              <option>June</option>
-              <option>July</option>
-              <option>August</option>
-              <option>September</option>
-              <option>October</option>
-              <option>November</option>
-              <option>December</option>
-            </select>
-          </Field>
-
-          <Field label="Retainer Amount">
-            <input
-              type="number"
-              className={inputCls}
-              value={f.retainer_amount}
-              onChange={(e) =>
-                set("retainer_amount", Number(e.target.value))
-              }
-            />
-          </Field>
-
-          <Field label="Annual Retainer Value">
-            <input
-              type="number"
-              className={inputCls}
-              value={f.annual_retainer_value}
-              onChange={(e) =>
-                set("annual_retainer_value", Number(e.target.value))
-              }
-            />
-          </Field>
-
-          <Field label="Project Amount">
-            <input
-              type="number"
-              className={inputCls}
-              value={f.project_amount}
-              onChange={(e) =>
-                set("project_amount", Number(e.target.value))
-              }
-            />
-          </Field>
-
-          <Field label="Total Annual Revenue">
-            <input
-              type="number"
-              className={inputCls}
-              value={f.total_annual_revenue}
-              onChange={(e) =>
-                set("total_annual_revenue", Number(e.target.value))
-              }
-            />
-          </Field>
-
-          <Field label="Probability of Closure (%)">
-            <select
-              className={inputCls}
-              value={f.probability_closure}
-              onChange={(e) => set("probability_closure", Number(e.target.value))}
-            >
-              <option value={0}>0%</option>
-              <option value={10}>10%</option>
-              <option value={20}>20%</option>
-              <option value={30}>30%</option>
-              <option value={40}>40%</option>
-              <option value={50}>50%</option>
-              <option value={60}>60%</option>
-              <option value={70}>70%</option>
-              <option value={80}>80%</option>
-              <option value={90}>90%</option>
-              <option value={100}>100%</option>
-            </select>
-          </Field>
-
-          <Field label="Probabilistic Revenue">
-            <input
-              type="number"
-              className={inputCls}
-              value={f.probabilistic_revenue}
-              onChange={(e) =>
-                set("probabilistic_revenue", Number(e.target.value))
-              }
-            />
-          </Field>
-
-          <Field label="Source for Closed">
-            <input
-              className={inputCls}
-              value={f.source_closed}
-              onChange={(e) => set("source_closed", e.target.value)}
-            />
-          </Field>
-
+            <Field label="Deal Type">
+              <select
+                className={inputCls}
+                value={f.deal_type}
+                onChange={(e) => set("deal_type", e.target.value)}
+              >
+                <option value="">Select Type</option>
+                <option value="Retainer">Retainer</option>
+                <option value="Project">Project</option>
+              </select>
+            </Field>
+          </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+        {/* --- Status --- */}
+        <div>
+          <SectionHeader icon={Tag} title="Status & Timeline" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Lead Stage">
+              <select
+                className={inputCls}
+                value={f.lead_stage}
+                onChange={(e) => set("lead_stage", e.target.value)}
+              >
+                <option value="">Select Stage</option>
+                <option>New</option>
+                <option>Reached Out</option>
+                <option>Proposal Shared</option>
+                <option>Negotiation</option>
+                <option>Client's Final Response Awaited</option>
+                <option>Closed</option>
+                <option>Won</option>
+                <option>Lost</option>
+              </select>
+            </Field>
+
+            <Field label="Start Month">
+              <select
+                className={inputCls}
+                value={f.start_month}
+                onChange={(e) => set("start_month", e.target.value)}
+              >
+                <option value="">Select Month</option>
+                {["January","February","March","April","May","June","July","August","September","October","November","December"].map((m) => (
+                  <option key={m}>{m}</option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Hot Status">
+              <div className="flex gap-2">
+                {["Hot", "Warm", "Cold"].map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => set("hot_status", opt)}
+                    className={`flex-1 rounded-md border px-3 py-2 text-xs font-medium transition ${
+                      f.hot_status === opt
+                        ? opt === "Hot"
+                          ? "border-red-500/50 bg-red-500/10 text-red-400"
+                          : opt === "Warm"
+                          ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
+                          : "border-blue-500/50 bg-blue-500/10 text-blue-400"
+                        : "border-zinc-700 text-zinc-500 hover:border-zinc-600"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </Field>
+
+            <Field label="Current Status">
+              <div className="flex gap-2">
+                {["Hot", "Warm", "Cold"].map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => set("current_status", opt)}
+                    className={`flex-1 rounded-md border px-3 py-2 text-xs font-medium transition ${
+                      f.current_status === opt
+                        ? opt === "Hot"
+                          ? "border-red-500/50 bg-red-500/10 text-red-400"
+                          : opt === "Warm"
+                          ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
+                          : "border-blue-500/50 bg-blue-500/10 text-blue-400"
+                        : "border-zinc-700 text-zinc-500 hover:border-zinc-600"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </Field>
+          </div>
+        </div>
+
+        {/* --- Financials --- */}
+        <div>
+          <SectionHeader icon={IndianRupee} title="Financials" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Retainer Amount">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">₹</span>
+                <input
+                  type="number"
+                  className={`${inputCls} pl-7`}
+                  value={f.retainer_amount}
+                  onChange={(e) => set("retainer_amount", Number(e.target.value))}
+                />
+              </div>
+            </Field>
+
+            <Field label="Annual Retainer Value">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">₹</span>
+                <input
+                  type="number"
+                  className={`${inputCls} pl-7`}
+                  value={f.annual_retainer_value}
+                  onChange={(e) => set("annual_retainer_value", Number(e.target.value))}
+                />
+              </div>
+            </Field>
+
+            <Field label="Project Amount">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">₹</span>
+                <input
+                  type="number"
+                  className={`${inputCls} pl-7`}
+                  value={f.project_amount}
+                  onChange={(e) => set("project_amount", Number(e.target.value))}
+                />
+              </div>
+            </Field>
+
+            <Field label="Total Annual Revenue">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">₹</span>
+                <input
+                  type="number"
+                  className={`${inputCls} pl-7 font-medium`}
+                  value={f.total_annual_revenue}
+                  onChange={(e) => set("total_annual_revenue", Number(e.target.value))}
+                />
+              </div>
+            </Field>
+
+            <Field label="Source for Closed">
+              <input
+                className={inputCls}
+                placeholder="e.g. Upsell, Referral"
+                value={f.source_closed}
+                onChange={(e) => set("source_closed", e.target.value)}
+              />
+            </Field>
+          </div>
+        </div>
+
+        {/* --- Probability + derived revenue --- */}
+        <div>
+          <SectionHeader icon={TrendingUp} title="Closure Forecast" />
+
+          <Field label="Probability of Closure">
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={f.probability_closure}
+                onChange={(e) => set("probability_closure", Number(e.target.value))}
+                className="flex-1 accent-red-500"
+              />
+              <span className={`w-12 text-right text-sm font-semibold ${probColor}`}>
+                {f.probability_closure}%
+              </span>
+            </div>
+          </Field>
+
+          <div className="mt-3 flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-3">
+            <span className="text-xs text-zinc-500">Probabilistic Revenue (auto-calculated)</span>
+            <span className="text-sm font-semibold text-zinc-100">
+              ₹{Math.round(f.probabilistic_revenue).toLocaleString("en-IN")}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800 sticky bottom-0 bg-inherit">
           <button
             onClick={onClose}
             className="rounded-md px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200"
@@ -3186,7 +3239,7 @@ function LeadForm({ lead, onSave, onClose }) {
 
           <button
             onClick={() => onSave(f)}
-            className="rounded-md btn-primary px-5 py-2 text-sm font-medium text-white"
+            className="rounded-md btn-primary px-5 py-2 text-sm font-medium text-white hover:bg-red-500"
           >
             {lead ? "Save Changes" : "Add Lead"}
           </button>

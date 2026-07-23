@@ -1,65 +1,62 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function sendReminderMail(email, name, task, daysLeft) {
+    try {
+        const data = await resend.emails.send({
+            from: "Compass Dashboard <hawk-compass@gozoop.com>",
+            to: email,
+            subject: `Reminder: "${task.title}" is due in ${daysLeft} day${daysLeft > 1 ? "s" : ""}`,
+            html: `
+                <h2>Hello ${name},</h2>
 
-    await transporter.sendMail({
+                <p>This is a reminder that your task is approaching its due date.</p>
 
-        from: `"Compass Dashboard" <${process.env.EMAIL_USER}>`,
+                <table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse;">
+                    <tr>
+                        <td><b>Task</b></td>
+                        <td>${task.title}</td>
+                    </tr>
 
-        to: email,
+                    <tr>
+                        <td><b>Status</b></td>
+                        <td>${task.status}</td>
+                    </tr>
 
-        subject: `Reminder: "${task.title}" is due in ${daysLeft} day${daysLeft > 1 ? "s" : ""}`,
+                    <tr>
+                        <td><b>Priority</b></td>
+                        <td>${task.priority}</td>
+                    </tr>
 
-        html: `
-            <h2>Hello ${name},</h2>
+                    <tr>
+                        <td><b>Due Date</b></td>
+                        <td>${task.due_date}</td>
+                    </tr>
 
-            <p>This is a reminder that your task is approaching its due date.</p>
+                    <tr>
+                        <td><b>Reminder</b></td>
+                        <td>${daysLeft} day(s) remaining</td>
+                    </tr>
+                </table>
 
-            <table border="1" cellpadding="8" cellspacing="0">
+                <br>
 
-                <tr>
-                    <td><b>Task</b></td>
-                    <td>${task.title}</td>
-                </tr>
+                <p>Please complete it before the due date.</p>
 
-                <tr>
-                    <td><b>Status</b></td>
-                    <td>${task.status}</td>
-                </tr>
+                <p><b>Compass Operations Dashboard</b></p>
+            `,
+        });
 
-                <tr>
-                    <td><b>Priority</b></td>
-                    <td>${task.priority}</td>
-                </tr>
+        console.log("Reminder email sent:", data);
 
-                <tr>
-                    <td><b>Due Date</b></td>
-                    <td>${task.due_date}</td>
-                </tr>
+        return true;
 
-                <tr>
-                    <td><b>Reminder</b></td>
-                    <td>${daysLeft} day(s) remaining</td>
-                </tr>
+    } catch (err) {
+        console.error("Reminder Email Error:", err);
 
-            </table>
-
-            <br>
-
-            <p>Please complete it before the due date.</p>
-
-            <p><b>Compass Operations Dashboard</b></p>
-        `,
-    });
-
+        return false;
+    }
 }
 
 module.exports = sendReminderMail;
