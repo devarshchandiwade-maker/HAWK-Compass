@@ -15,8 +15,8 @@ export default function AdminLogin() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const login = async (e) => {
-    e.preventDefault();
+  const login = async (er) => {
+    er.preventDefault();
     setError("");
     setLoading(true);
 
