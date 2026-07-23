@@ -1859,8 +1859,8 @@ function RetainersView({ retainers, setRetainers }) {
     setShowForm(false);
     setEditing(null);
 
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error(error);
     alert("Failed to save retainer");
   }
 };
