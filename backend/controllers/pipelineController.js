@@ -35,7 +35,7 @@ const [existing] = await db.query(
 
 if (existing.length > 0) {
   return res.status(409).json({
-    message: "Lead with this brand name already exists.",
+    msg: "Lead with this brand name already exists.",
   });
 }
 
