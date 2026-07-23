@@ -1,6 +1,7 @@
 const db = require("../db/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const sendInviteMail = require("../utils/sendInviteMail"); 
 
 exports.login = async (req, res) => {
     try {
@@ -261,7 +262,6 @@ exports.updatePermissions = async (req,res)=>{
 
 exports.addUser = async (req, res) => {
     try {
-
         const { name, email } = req.body;
 
         if (!name || !email) {
@@ -301,6 +301,11 @@ exports.addUser = async (req, res) => {
             )
             `,
             [name, email]
+        );
+
+        // Fire and forget — don't let email issues block the response
+        sendInviteMail(email, name).catch((err) =>
+            console.error("Failed to send invite email:", err)
         );
 
         res.json({

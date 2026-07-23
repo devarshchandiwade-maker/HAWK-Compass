@@ -66,7 +66,7 @@ function CompassMark({ size = 32 }) {
             <CompassMark size={32} />
           </div>
           <h1 className="mt-4 text-xl font-semibold text-white">
-            Admin Login
+            Super Admin Login
           </h1>
           <p className="mt-1 text-sm text-slate-400">
             Sign in to manage users and permissions

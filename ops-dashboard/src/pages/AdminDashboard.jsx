@@ -119,8 +119,8 @@ export default function AdminDashboard() {
     try {
       const res = await getUsers();
       setUsers(res.data);
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
+      console.error(e);
       alert("Failed to load users");
     }
   };
