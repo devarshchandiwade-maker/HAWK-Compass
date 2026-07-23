@@ -89,8 +89,15 @@ function CompassMark({ size = 32 }) {
           </div>
         </div>
 
+
         <p className="mt-6 text-center text-xs text-slate-500">
           By continuing you agree to our terms of use.
+        </p>
+
+        <p className="mt-2 text-center text-xs text-slate-500">
+          All copyright reserved &copy; {new Date().getFullYear()}. Powered by{" "}
+          <span className="font-semibold text-red-500">Gozoop</span>{" "}
+          <span className="font-semibold text-white">Group</span>
         </p>
       </div>
     </div>
