@@ -11,6 +11,7 @@ import {
   LineChart,
   Line,
   ReferenceLine,
+  CartesianGrid,
 } from "recharts";
 import {
   ListChecks,
@@ -2496,6 +2497,7 @@ function PipelineView({ leads, setLeads, owners }) {
         </div>
       </div>
 
+      <StartMonthChart leads={leads} />
       <PipelineStats leads={leads} />
 
       <LeadCard
@@ -3150,6 +3152,78 @@ function PipelineStats({ leads }) {
         value={inr(totalRevenue)}
         tone="green"
       />
+    </div>
+  );
+}
+
+function StartMonthChart({ leads }) {
+  // group leads by start_month, counting leads + summing revenue
+  const grouped = leads.reduce((acc, l) => {
+    const key = l.start_month || "Unspecified";
+    if (!acc[key]) acc[key] = { month: key, count: 0, revenue: 0 };
+    acc[key].count += 1;
+    acc[key].revenue += Number(l.total_annual_revenue) || 0;
+    return acc;
+  }, {});
+
+  // try to sort chronologically; fall back to alphabetical if dates don't parse
+  const data = Object.values(grouped).sort((a, b) => {
+    const da = new Date(a.month);
+    const db = new Date(b.month);
+    if (!isNaN(da) && !isNaN(db)) return da - db;
+    return a.month.localeCompare(b.month);
+  });
+
+  if (data.length === 0) return null;
+
+  return (
+    <div className="mb-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold tracking-tight">
+            Leads by Start Month
+          </h3>
+          <p className="text-xs text-zinc-500">
+            Volume of leads starting each month
+          </p>
+        </div>
+      </div>
+
+      <ResponsiveContainer width="100%" height={260}>
+        <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+          <XAxis
+            dataKey="month"
+            tick={{ fill: "#a1a1aa", fontSize: 11 }}
+            axisLine={{ stroke: "#3f3f46" }}
+            tickLine={false}
+          />
+          <YAxis
+            allowDecimals={false}
+            tick={{ fill: "#a1a1aa", fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <Tooltip
+            cursor={{ fill: "rgba(255,255,255,0.04)" }}
+            contentStyle={{
+              backgroundColor: "#18181b",
+              border: "1px solid #3f3f46",
+              borderRadius: 8,
+              fontSize: 12,
+            }}
+            labelStyle={{ color: "#e4e4e7", marginBottom: 4 }}
+            formatter={(value, name) =>
+              name === "count" ? [value, "Leads"] : [inr(value), "Revenue"]
+            }
+          />
+          <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={48}>
+            {data.map((_, i) => (
+              <Cell key={i} fill="#ef4444" fillOpacity={0.85} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
