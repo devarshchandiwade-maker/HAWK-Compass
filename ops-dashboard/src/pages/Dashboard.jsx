@@ -43,7 +43,7 @@ import {
   ClipboardPaste,
   Building2,
   Tag,
-  CheckCircle2, XCircle, Repeat, Briefcase, Wallet, Trophy
+  CheckCircle2, XCircle, Repeat, Briefcase, Wallet, Flame
 } from "lucide-react";
 import {
   fetchTasks,
@@ -3107,8 +3107,9 @@ function PipelineStats({ leads }) {
   const retainerCount = leads.filter((l) => l.deal_type === "Retainer").length;
   const projectCount = leads.filter((l) => l.deal_type === "Project").length;
 
-  const wonCount = leads.filter((l) => l.lead_stage === "Won").length;
-  const lostCount = leads.filter((l) => l.lead_stage === "Lost").length;
+  const hotCount = leads.filter((l) =>
+    (l.current_status || "").toLowerCase().includes("hot"),
+  ).length;
 
   const totalRevenue = leads.reduce(
     (sum, l) => sum + (Number(l.total_annual_revenue) || 0),
@@ -3142,12 +3143,7 @@ function PipelineStats({ leads }) {
         value={projectCount}
         tone="purple"
       />
-      <StatCard
-        icon={Trophy}
-        label="Won / Lost"
-        value={`${wonCount} / ${lostCount}`}
-        tone="amber"
-      />
+      <StatCard icon={Flame} label="Hot Leads" value={hotCount} tone="red" />
       <StatCard
         icon={Wallet}
         label="Total Revenue"
