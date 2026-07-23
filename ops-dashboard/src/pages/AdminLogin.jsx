@@ -60,10 +60,13 @@ function CompassMark({ size = 32 }) {
       <div className="w-full max-w-sm">
         {/* Brand mark */}
         <div className="mb-6 flex flex-col items-center text-center">
-          <div
-            className="flex h-12 w-12 items-center justify-center rounded-xl"
-          >
-            <CompassMark size={32} /> <p className="mt-4 text-2xl font-bold text-white">Compass</p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center">
+              <CompassMark size={40} />
+            </div>
+            <p className="text-2xl font-bold tracking-tight text-white">
+              Compass
+            </p>
           </div>
           <h1 className="mt-4 text-xl font-semibold text-white">
             Super Admin Login
