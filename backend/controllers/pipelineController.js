@@ -27,6 +27,18 @@ exports.addLead = async (req, res) => {
     source_closed,
   } = req.body;
 
+  // Check if brand already exists
+const [existing] = await db.query(
+  "SELECT id FROM pipeline WHERE LOWER(TRIM(brand_name)) = LOWER(TRIM(?))",
+  [brand_name]
+);
+
+if (existing.length > 0) {
+  return res.status(409).json({
+    message: "Lead with this brand name already exists.",
+  });
+}
+
   await db.query(
     `
     INSERT INTO pipeline (
