@@ -2751,6 +2751,13 @@ function LeadCard({ leads, setLeads, setEditing, setShowForm }) {
   );
 }
 
+const toggleSort = (key) =>
+    setSort((s) =>
+      s.key === key
+        ? { key, dir: s.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: "asc" },
+    );
+
   return (
     <div className="space-y-3">
       {/* toolbar */}
