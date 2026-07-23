@@ -2513,7 +2513,7 @@ setToast({
   title: "Excel Imported",
   message:
     updated.skipped.length > 0
-      ? `${updated.insertedCount} lead${updated.insertedCount !== 1 ? "s" : ""} imported. ${updated.skipped.length} skipped (duplicate brand${updated.skipped.length !== 1 ? "s" : ""}: ${updated.skipped.join(", ")}).`
+      ? `${updated.insertedCount} lead${updated.insertedCount !== 1 ? "s" : ""} imported. ${updated.skipped.length} duplicate${updated.skipped.length !== 1 ? "s" : ""} skipped.`
       : `${updated.insertedCount} lead${updated.insertedCount !== 1 ? "s" : ""} imported successfully into the pipeline.`,
 });
 
