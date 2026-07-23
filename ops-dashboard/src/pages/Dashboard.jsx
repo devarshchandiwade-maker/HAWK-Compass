@@ -2355,26 +2355,28 @@ function PipelineView({ leads, setLeads, owners }) {
     if (lead.id) {
       data = await editLead(lead.id, lead);
       setToast({
-          type: "edit",
-          title: "Lead Updated",
-          message: `${lead.brand_name} has been updated successfully.`,
+        type: "edit",
+        title: "Lead Updated",
+        message: `${lead.brand_name} has been updated successfully.`,
       });
     } else {
       data = await createLead(lead);
-    }
-
-    setLeads(data);
-
-    setToast({
+      setToast({
         type: "add",
         title: "Lead Added",
         message: `${lead.brand_name} has been added successfully.`,
-    });
+      });
+    }
 
+    setLeads(data);
     setShowForm(false);
     setEditing(null);
   } catch (err) {
-    console.error(err);
+    setToast({
+      type: "error",
+      title: err.response?.data?.title || "Couldn't Save Lead",
+      message: err.response?.data?.message || "Something went wrong. Please try again.",
+    });
   }
 };
   

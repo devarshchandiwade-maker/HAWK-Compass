@@ -35,7 +35,8 @@ const [existing] = await db.query(
 
 if (existing.length > 0) {
   return res.status(409).json({
-    msg: "Lead with this brand name already exists.",
+    title: "Duplicate Lead",
+    message: "Lead with this brand name already exists.",
   });
 }
 
@@ -107,6 +108,23 @@ exports.updateLead = async (req, res) => {
     source_closed,
   } = req.body;
 
+  const [existing] = await db.query(
+    `
+    SELECT id
+    FROM pipeline
+    WHERE LOWER(TRIM(brand_name)) = LOWER(TRIM(?))
+      AND id <> ?
+    `,
+    [brand_name, id]
+  );
+
+  if (existing.length > 0) {
+  return res.status(409).json({
+    title: "Duplicate Lead",
+    message: "Lead with this brand name already exists.",
+  });
+}
+
   await db.query(
     `
     UPDATE pipeline
@@ -175,6 +193,16 @@ exports.bulkImport = async (req, res) => {
     console.log(JSON.stringify(req.body, null, 2));
 
     for (const r of rows) {
+      
+      const [exists] = await db.query(
+        "SELECT id FROM pipeline WHERE LOWER(TRIM(brand_name)) = LOWER(TRIM(?))",
+        [r.brand_name]
+      );
+
+      if (exists.length > 0) {
+        continue; // Skip duplicate
+      }
+      
       await db.query(
         `
         INSERT INTO pipeline (
@@ -215,6 +243,8 @@ exports.bulkImport = async (req, res) => {
         ]
       );
     }
+
+    
 
     const [rowsData] = await db.query(
       "SELECT * FROM pipeline ORDER BY created_at DESC"
