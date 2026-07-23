@@ -86,7 +86,7 @@ import { useNavigate } from "react-router-dom";
 
 import  PipelineToast from "../components/PipelineToast";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
-import Footer from "../components/Footer";
+
 /* ------------------------------------------------------------------ */
 /* helpers                                                             */
 /* ------------------------------------------------------------------ */
@@ -526,7 +526,7 @@ const handleLogout = () => {
         <SalRetView />
         )}
 
-        <Footer />
+        
       </main>
 
       

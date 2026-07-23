@@ -8,45 +8,21 @@ import Settings from "./pages/Settings";
 import Footer from "./components/Footer";
 
 function App() {
-
     return (
+        <div className="flex min-h-screen flex-col">
+            <main className="flex-1">
+                <Routes>
+                    <Route path="/" element={<Login />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/admin" element={<AdminLogin />} />
+                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                    <Route path="/settings" element={<Settings />} />
+                </Routes>
+            </main>
 
-        <>
-
-      
-
-        <Routes>
-
-            <Route
-                path="/"
-                element={<Login />}
-            />
-
-            <Route
-                path="/dashboard"
-                element={<Dashboard />}
-            />
-
-            <Route
-                path="/admin"
-                element={<AdminLogin />}
-            />
-
-            <Route
-                path="/admin/dashboard"
-                element={<AdminDashboard />}
-            />
-
-            <Route
-                path="/settings"
-                element={<Settings />}
-            />
-
-        </Routes>
-        </>
-      
+            <Footer />
+        </div>
     );
-
 }
 
 export default App;
