@@ -57,7 +57,7 @@ function CompassMark({ size = 32 }) {
 }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#09090b] px-4 text-slate-100">
+    <div className="flex flex-col min-h-screen items-center justify-center bg-[#09090b] px-4 text-slate-100">
       <div className="w-full max-w-sm">
         {/* Brand mark */}
         <div className="mb-6 flex flex-col items-center text-center">

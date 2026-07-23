@@ -86,6 +86,7 @@ import { useNavigate } from "react-router-dom";
 
 import  PipelineToast from "../components/PipelineToast";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
+import Footer from "../components/Footer";
 /* ------------------------------------------------------------------ */
 /* helpers                                                             */
 /* ------------------------------------------------------------------ */
@@ -524,7 +525,11 @@ const handleLogout = () => {
         {tab === "salret" && permissions.sal_ret === 1 && (
         <SalRetView />
         )}
+
+        <Footer />
       </main>
+
+      
     </div>
   );
 }
