@@ -256,8 +256,8 @@ exports.bulkImport = async (req, res) => {
       insertedCount,
       skipped, // array of brand names that were duplicates and skipped
     });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: e.message });
+  } catch (er) {
+    console.error(er);
+    res.status(500).json({ message: er.message });
   }
 };

@@ -2688,6 +2688,8 @@ function LeadCard({ leads, setLeads, setEditing, setShowForm }) {
   const [pageSize, setPageSize] = useState(25);
   const [page, setPage] = useState(1);
 
+  const [sort, setSort] = useState({ key: null, dir: "asc" });
+
   // distinct values for filter dropdowns, derived from actual data
   const stageOptions = [...new Set(leads.map((l) => l.lead_stage).filter(Boolean))];
   const hotOptions = [...new Set(leads.map((l) => l.current_status).filter(Boolean))];
