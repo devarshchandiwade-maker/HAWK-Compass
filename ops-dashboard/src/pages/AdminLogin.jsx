@@ -63,14 +63,11 @@ function CompassMark({ size = 32 }) {
           <div
             className="flex h-12 w-12 items-center justify-center rounded-xl"
           >
-            <CompassMark size={32} />
+            <CompassMark size={32} /> <p className="mt-4 text-2xl font-bold text-white">Compass</p>
           </div>
           <h1 className="mt-4 text-xl font-semibold text-white">
             Super Admin Login
           </h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Sign in to manage users and permissions
-          </p>
         </div>
 
         {/* Card */}

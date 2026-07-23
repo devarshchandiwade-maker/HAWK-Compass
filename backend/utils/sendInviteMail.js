@@ -16,7 +16,7 @@ async function sendInviteMail(email, name) {
             subject: "You've been invited to Compass Dashboard",
             html: `
                 <div style="font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a1a;">
-                    <div style="background: #00c950; padding: 24px 32px; border-radius: 8px 8px 0 0;">
+                    <div style="background: linear-gradient(135deg, rgb(120, 200, 77), rgb(72, 202, 2)); padding: 24px 32px; border-radius: 8px 8px 0 0;">
                         <h1 style="color: #ffffff; margin: 0; font-size: 20px;">Compass Dashboard</h1>
                     </div>
 
@@ -38,7 +38,7 @@ async function sendInviteMail(email, name) {
 
                         <div style="text-align: center; margin: 32px 0;">
                             <a href="${DASHBOARD_URL}"
-                               style="background: #00c950; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600; display: inline-block;">
+                               style="background: linear-gradient(135deg, rgb(120, 200, 77), rgb(72, 202, 2)); color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600; display: inline-block;">
                                 Go to Dashboard
                             </a>
                         </div>
