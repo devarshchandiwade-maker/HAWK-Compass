@@ -86,62 +86,56 @@ function CompassMark({ size = 32 }) {
           )}
 
           <div className="mb-4">
-            <label className="mb-1.5 block text-xs font-medium text-slate-400">
-              Email
-            </label>
-            <div className="relative">
-              <Mail
-                size={16}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
-              />
-              <input
-                type="email"
-                placeholder="you@company.com"
-                autoComplete="email"
-                className="w-full rounded-lg border border-white/10 bg-white/[0.03] py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-[#78c84d]/50 focus:ring-2 focus:ring-[#78c84d]/30"
-                value={form.email}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    email: e.target.value,
-                  })
-                }
-              />
-            </div>
-          </div>
+  <div className="relative">
+    <Mail
+      size={16}
+      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+    />
+    <input
+      type="email"
+      placeholder="Email"
+      autoComplete="email"
+      className="w-full rounded-lg border border-white/10 bg-white/[0.03] py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-[#78c84d]/50 focus:ring-2 focus:ring-[#78c84d]/30"
+      value={form.email}
+      onChange={(e) =>
+        setForm({
+          ...form,
+          email: e.target.value,
+        })
+      }
+    />
+  </div>
+</div>
 
-          <div className="mb-6">
-            <label className="mb-1.5 block text-xs font-medium text-slate-400">
-              Password
-            </label>
-            <div className="relative">
-              <Lock
-                size={16}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
-              />
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                className="w-full rounded-lg border border-white/10 bg-white/[0.03] py-2.5 pl-9 pr-9 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-[#78c84d]/50 focus:ring-2 focus:ring-[#78c84d]/30"
-                value={form.password}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    password: e.target.value,
-                  })
-                }
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition-colors hover:text-slate-300 cursor-pointer"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </div>
+<div className="mb-6">
+  <div className="relative">
+    <Lock
+      size={16}
+      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+    />
+    <input
+      type={showPassword ? "text" : "password"}
+      placeholder="Password"
+      autoComplete="current-password"
+      className="w-full rounded-lg border border-white/10 bg-white/[0.03] py-2.5 pl-9 pr-9 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-[#78c84d]/50 focus:ring-2 focus:ring-[#78c84d]/30"
+      value={form.password}
+      onChange={(e) =>
+        setForm({
+          ...form,
+          password: e.target.value,
+        })
+      }
+    />
+    <button
+      type="button"
+      onClick={() => setShowPassword((v) => !v)}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition-colors hover:text-slate-300 cursor-pointer"
+      tabIndex={-1}
+    >
+      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+    </button>
+  </div>
+</div>
 
           <button
             type="submit"
@@ -155,6 +149,12 @@ function CompassMark({ size = 32 }) {
 
         <p className="mt-6 text-center text-xs text-slate-500">
           Restricted access — authorized administrators only.
+        </p>
+
+        <p className="mt-2 text-center text-xs text-slate-500">
+          All copyright reserved &copy; {new Date().getFullYear()}. Powered by{" "}
+          <span className="font-semibold text-red-500">Gozoop</span>{" "}
+          <span className="font-semibold text-white">Group</span>
         </p>
       </div>
     </div>
