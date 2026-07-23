@@ -2500,7 +2500,7 @@ const data = rows.map((r) => ({
 
 const updated = await importPipeline(data);
 
-setLeads(updated);
+setLeads(updated.leads);
 
 // setToast({
 //     type: "import",
