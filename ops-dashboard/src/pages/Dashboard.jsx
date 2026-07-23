@@ -42,9 +42,7 @@ import {
   TrendingDown,
   ClipboardPaste,
   Building2, 
-  Tag, 
-  IndianRupee, 
-  TrendingUp
+  Tag
 } from "lucide-react";
 import {
   fetchTasks,
