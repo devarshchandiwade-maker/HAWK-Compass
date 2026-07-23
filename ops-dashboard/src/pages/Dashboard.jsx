@@ -2709,10 +2709,34 @@ function LeadCard({ leads, setLeads, setEditing, setShowForm }) {
     return matchesSearch && matchesStage && matchesPitch && matchesHot;
   });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const safePage = Math.min(page, totalPages);
-  const start = (safePage - 1) * pageSize;
-  const pageRows = filtered.slice(start, start + pageSize);
+  const sorted = [...filtered].sort((a, b) => {
+  if (!sort.key) return 0;
+
+  let av = a[sort.key];
+  let bv = b[sort.key];
+
+  // Handle null/undefined
+  if (av == null) av = "";
+  if (bv == null) bv = "";
+
+  // Number comparison
+  if (typeof av === "number" && typeof bv === "number") {
+    return sort.dir === "asc" ? av - bv : bv - av;
+  }
+
+  // String comparison
+  av = String(av).toLowerCase();
+  bv = String(bv).toLowerCase();
+
+  if (av < bv) return sort.dir === "asc" ? -1 : 1;
+  if (av > bv) return sort.dir === "asc" ? 1 : -1;
+  return 0;
+});
+
+const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+const safePage = Math.min(page, totalPages);
+const start = (safePage - 1) * pageSize;
+const pageRows = sorted.slice(start, start + pageSize);
 
   // reset to page 1 whenever the filtered set changes shape
   useEffect(() => {
@@ -2728,13 +2752,20 @@ function LeadCard({ leads, setLeads, setEditing, setShowForm }) {
 
   const hasActiveFilters = search || stageFilter || pitchFilter || hotFilter;
 
-  function SortTh({ label, k, sort, onSort }) {
+  function SortTh({ label, k, sort, onSort, align = "left" }) {
   const active = sort.key === k;
+
   return (
-    <th className="px-4 py-2.5 font-medium">
+    <th
+      className={`px-4 py-2.5 font-medium ${
+        align === "right" ? "text-right" : "text-left"
+      }`}
+    >
       <button
         onClick={() => onSort(k)}
-        className={`flex items-center gap-1 uppercase tracking-wider transition hover:text-zinc-300 ${active ? "text-zinc-200" : ""}`}
+        className={`inline-flex items-center gap-1 ${
+          align === "right" ? "justify-end w-full" : ""
+        } ${active ? "text-zinc-200" : ""}`}
       >
         {label}
         {active ? (
