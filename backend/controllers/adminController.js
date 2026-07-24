@@ -283,25 +283,26 @@ exports.addUser = async (req, res) => {
             });
         }
 
+
         await db.query(
-            `
-            INSERT INTO users
-            (
-                google_id,
-                name,
-                email,
-                status
-            )
-            VALUES
-            (
-                '',
-                ?,
-                ?,
-                'Active'
-            )
-            `,
-            [name, email]
-        );
+    `
+    INSERT INTO users
+    (
+        google_id,
+        name,
+        email,
+        status
+    )
+    VALUES
+    (
+        'a',
+        ?,
+        ?,
+        'Active'
+    )
+    `,
+    [name, email]
+);
 
         // Fire and forget — don't let email issues block the response
         sendInviteMail(email, name).catch((err) =>

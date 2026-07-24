@@ -30,7 +30,7 @@ const extractTasks = async (req, res) => {
                 model: "google/gemini-2.5-flash",
 
                 // VERY IMPORTANT
-                max_tokens: 300,
+                max_tokens: 800,
 
                 temperature: 0,
 
