@@ -3525,7 +3525,7 @@ const [leadStages, setLeadStages] = useState(defaultLeadStages);
                   ))}
 
                   <option value="__add__">
-                    ➕ Add New Stage
+                    <Plus size={14} /> Add New Stage
                   </option>
                 </select>
               </div>
