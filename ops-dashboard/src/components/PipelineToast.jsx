@@ -28,14 +28,14 @@ export default function PipelineToast({ toast, onClose }) {
           to{opacity:1;transform:translateY(0)}
         }
       `}</style>
-
+ 
       <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-[#111113] p-4 shadow-2xl shadow-black/40">
 
         <div
           className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full"
           style={{
             background:
-              toast.type === "delete"
+              toast.type === "delete" || toast.type === "error"
                 ? "linear-gradient(135deg,#ef4444,#dc2626)"
                 : "linear-gradient(135deg,#78c84d,#48ca02)",
           }}
