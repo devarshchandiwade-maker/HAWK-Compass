@@ -2,6 +2,7 @@ const express = require("express");
 const multer = require("multer");
 
 const { extractTasks } = require("../controllers/aiController");
+const { salaryInsight } = require("../controllers/aiInsightController");
 
 const router = express.Router();
 
@@ -19,5 +20,7 @@ router.post(
     upload.single("image"),
     extractTasks
 );
+
+router.post("/salary-insight", salaryInsight);
 
 module.exports = router;

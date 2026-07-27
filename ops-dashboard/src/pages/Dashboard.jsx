@@ -3989,9 +3989,35 @@ function SalRetView() {
     : rows;
  
   const monthKeys = months.map((m) => m.month_key);
+
+  const [aiInsight, setAiInsight] = useState(null);
+  const [loading, setLoading] = useState(false);
  
   /* ---- locked state ---- */
   if (!loaded) return <div className="py-16 text-center text-sm text-zinc-500">Loading…</div>;
+
+  useEffect(() => {
+  async function loadInsight() {
+    setLoading(true);
+
+    try {
+      const { data } = await getSalaryInsight({
+        overall,
+        totalSal,
+        totalRev,
+        central,
+        rows,
+        target: 46,
+      });
+
+      setAiInsight(data);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  loadInsight();
+}, [overall, totalSal, totalRev, central, rows]);
  
   if (hasPin && !unlocked) {
     return (
@@ -4264,42 +4290,68 @@ function Insight({ overall, totalSal, totalRev, central, rows }) {
     .slice(0, 3);
  
   return (
-    <div className={`mb-5 rounded-xl border p-4 ${over ? "border-amber-500/40 bg-amber-500/[0.04]" : "border-emerald-500/40 bg-emerald-500/[0.04]"}`}>
-      <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-zinc-400">
-        <Target size={14} /> Insight · target 46% overall by 31 Mar 2027
+    <div
+  className={`mb-5 rounded-xl border p-5 ${
+    overall > SR_TARGET
+      ? "border-red-500/30 bg-red-500/5"
+      : "border-emerald-500/30 bg-emerald-500/5"
+  }`}
+>
+  {loading ? (
+    <div className="text-sm text-zinc-400">
+      Generating AI insight...
+    </div>
+  ) : aiInsight && (
+    <>
+      <h3 className="text-lg font-semibold text-white">
+        {aiInsight.headline}
+      </h3>
+
+      <p className="mt-3 text-zinc-300">
+        {aiInsight.summary}
+      </p>
+
+      <div className="mt-4 rounded-lg bg-zinc-900/50 p-3">
+        <div className="text-red-300 font-medium">
+          Risk
+        </div>
+
+        <div className="text-sm text-zinc-300">
+          {aiInsight.risk}
+        </div>
       </div>
-      <p className="mt-2 text-sm text-zinc-200">
-        You're at <span className={`font-semibold ${over ? "text-amber-300" : "text-emerald-300"}`}>{pct(overall)}</span> overall,{" "}
-        {dpts.toFixed(1)} pts {over ? "above" : "under"} the 46% target.{" "}
-        {over ? (
-          <>
-            To get back to 46% you'd need roughly <span className="font-medium text-zinc-100">{inrShort(needRev)}</span> more monthly
-            retainer, or <span className="font-medium text-zinc-100">{inrShort(cutSal)}</span> less monthly salary cost.
-          </>
-        ) : (
-          <>
-            You have about <span className="font-medium text-zinc-100">{inrShort(buffer)}</span> of monthly salary headroom before
-            you cross 46%.
-          </>
-        )}
-      </p>
-      <p className="mt-2 text-xs text-zinc-500">
-        Total salaries {inrShort(totalSal)} (incl. {inrShort(central)} central) ÷ retainers {inrShort(totalRev)}. Central and
-        ramp-up salaries count here even though they sit outside the per-brand percentages.
-      </p>
-      {over && drags.length > 0 && (
-        <p className="mt-2 text-xs text-zinc-400">
-          Biggest drags:{" "}
-          {drags.map((d, i) => (
-            <span key={d.brand}>
-              {i > 0 ? ", " : ""}
-              <span className="text-zinc-200">{d.brand}</span> ({pct(d.pct)})
+
+      <div className="mt-4">
+        <div className="font-medium text-white mb-2">
+          Recommendations
+        </div>
+
+        <ul className="space-y-2 text-sm text-zinc-300">
+          {aiInsight.recommendations.map((item, i) => (
+            <li key={i}>• {item}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-4">
+        <div className="font-medium text-white mb-2">
+          Biggest Drags
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {aiInsight.biggest_drags.map((brand, i) => (
+            <span
+              key={i}
+              className="rounded bg-red-500/10 px-2 py-1 text-red-300"
+            >
+              {brand}
             </span>
           ))}
-          . Fixing these moves the overall number most, since they combine a high % with a large salary base.
-        </p>
-      )}
-    </div>
+        </div>
+      </div>
+    </>
+  )}
+</div>
   );
 }
  
