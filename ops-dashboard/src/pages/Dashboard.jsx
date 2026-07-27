@@ -1560,7 +1560,7 @@ function AIImportModal({ kind = "task", onClose, onConfirm, setToast }) {
               onClick={() => {
                 const selected = items.filter((i) => i._keep);
 
-                await onConfirm(selected);
+                onConfirm(selected);
 
                 onClose();
               }}
