@@ -3277,10 +3277,10 @@ const CustomTooltip = ({ active, payload }) => {
         <span>{d.pitchNotDone}</span>
       </div>
 
-      {/* <div className="mt-2 border-t border-zinc-700 pt-2 flex justify-between gap-10">
+      <div className="mt-2 border-t border-zinc-700 pt-2 flex justify-between gap-10">
         <span>Revenue</span>
         <span>{inr(d.revenue)}</span>
-      </div> */}
+      </div>
     </div>
   );
 };
