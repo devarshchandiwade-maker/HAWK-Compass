@@ -601,18 +601,22 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
       const updatedTasks = await fetchTasks();
 
       setTasks(updatedTasks);
+      const importedCount = items.filter(t => t._keep).length;
+
       setToast({
         type: "import",
         title: "AI Import Complete",
-        message: `${validTasks.length} task${
-          validTasks.length > 1 ? "s" : ""
-        } imported successfully.`,
+        message: `${importedCount} task${importedCount !== 1 ? "s" : ""} imported successfully.`,
       });
       setShowAI(false);
     } catch (err) {
       console.error(err);
 
-      // alert("Failed to import tasks");
+      setToast({
+        type: "error",
+        title: "Import Failed",
+        message: err?.response?.data?.message || "Failed to import tasks.",
+      });
     }
   };
 
@@ -955,6 +959,7 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
           kind="task"
           onClose={() => setShowAI(false)}
           onConfirm={addMany}
+          setToast={setToast}
         />
       )}
 
@@ -1249,7 +1254,7 @@ const IMPORT_CONFIG = {
   },
 };
 
-function AIImportModal({ kind = "task", onClose, onConfirm }) {
+function AIImportModal({ kind = "task", onClose, onConfirm, setToast }) {
   const cfg = IMPORT_CONFIG[kind];
   const [phase, setPhase] = useState("upload"); // upload | working | review | error
   const [preview, setPreview] = useState(null);
@@ -1277,6 +1282,13 @@ function AIImportModal({ kind = "task", onClose, onConfirm }) {
 
         if (imported.length === 0) {
           setErr(cfg.empty);
+
+          setToast?.({
+            type: "error",
+            title: "Nothing Found",
+            message: cfg.empty,
+          });
+
           setPhase("error");
           return;
         }
@@ -1301,9 +1313,20 @@ function AIImportModal({ kind = "task", onClose, onConfirm }) {
     } catch (e) {
       console.error(e);
 
-      setErr(cfg.fail);
+      const message =
+    e?.response?.data?.message ||
+    e?.message ||
+    cfg.fail;
 
-      setPhase("error");
+  setErr(message);
+
+  setToast?.({
+    type: "error",
+    title: "Import Failed",
+    message,
+  });
+
+  setPhase("error");
     }
   };
 
@@ -1535,7 +1558,10 @@ function AIImportModal({ kind = "task", onClose, onConfirm }) {
             </button>
             <button
               onClick={() => {
-                onConfirm(items.filter((i) => i._keep));
+                const selected = items.filter((i) => i._keep);
+
+                await onConfirm(selected);
+
                 onClose();
               }}
               className="rounded-md btn-primary px-4 py-2 text-xs font-medium text-white hover:bg-red-500"
