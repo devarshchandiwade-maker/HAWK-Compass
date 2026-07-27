@@ -3992,32 +3992,36 @@ function SalRetView() {
 
   const [aiInsight, setAiInsight] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!sel.overall) return;
+
+    async function loadInsight() {
+        try {
+            setLoading(true);
+
+            const { data } = await getSalaryInsight({
+                overall: sel.overall,
+                totalSal: sel.sal,
+                totalRev: sel.rev,
+                central,
+                rows,
+                target: 46,
+            });
+
+            setAiInsight(data);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    loadInsight();
+}, [sel.overall, sel.sal, sel.rev, central, rows]);
  
   /* ---- locked state ---- */
   if (!loaded) return <div className="py-16 text-center text-sm text-zinc-500">Loading…</div>;
 
-  useEffect(() => {
-  async function loadInsight() {
-    setLoading(true);
-
-    try {
-      const { data } = await getSalaryInsight({
-        overall,
-        totalSal,
-        totalRev,
-        central,
-        rows,
-        target: 46,
-      });
-
-      setAiInsight(data);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  loadInsight();
-}, [overall, totalSal, totalRev, central, rows]);
+ 
  
   if (hasPin && !unlocked) {
     return (
@@ -4149,7 +4153,15 @@ function SalRetView() {
           </div>
  
           {sel.overall != null && (
-            <Insight overall={sel.overall} totalSal={sel.sal} totalRev={sel.rev} central={central} rows={withPct} />
+            <Insight
+                overall={sel.overall}
+                totalSal={sel.sal}
+                totalRev={sel.rev}
+                central={central}
+                rows={withPct}
+                loading={loading}
+                aiInsight={aiInsight}
+            />
           )}
  
           <div className="relative mb-3">
@@ -4278,7 +4290,7 @@ function YtdPanel({ series, ytdOverall, ytdSal, ytdRev, selected, onPick }) {
   );
 }
  
-function Insight({ overall, totalSal, totalRev, central, rows }) {
+function Insight({ overall, totalSal, totalRev, central, rows, loading, aiInsight }) {
   const over = overall > SR_TARGET;
   const dpts = Math.abs(overall - SR_TARGET) * 100;
   const buffer = SR_TARGET * totalRev - totalSal;
