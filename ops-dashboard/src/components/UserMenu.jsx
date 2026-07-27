@@ -21,7 +21,7 @@ function UserMenu({ user, navigate, handleLogout }) {
       {/* Profile */}
       <div
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-1 hover:bg-zinc-100 transition"
+        className="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-1 hover:bg-zinc-700 transition"
       >
         <img
           src={user.photo}
@@ -30,7 +30,7 @@ function UserMenu({ user, navigate, handleLogout }) {
         />
 
         <div className="leading-tight">
-          <div className="text-sm font-medium">{user.name}</div>
+          <div className="text-sm font-medium hover:text-color-">{user.name}</div>
           <div className="text-xs text-zinc-500">{user.email}</div>
         </div>
 
@@ -44,30 +44,32 @@ function UserMenu({ user, navigate, handleLogout }) {
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 mt-2 w-52 bg-white border border-zinc-200 rounded-xl shadow-lg overflow-hidden z-50">
-          <button
-            onClick={() => {
-              setOpen(false);
-              navigate("/settings");
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-zinc-100 transition"
-          >
-            <Settings size={18} />
-            Settings
-          </button>
+  <div className="absolute top-full right-0 mt-1 w-56 rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl py-2 z-50">
+    <button
+      onClick={() => {
+        setOpen(false);
+        navigate("/settings");
+      }}
+      className="flex w-full items-center gap-3 px-4 py-3 text-sm text-zinc-200 hover:bg-zinc-800 transition-colors"
+    >
+      <Settings size={18} />
+      Settings
+    </button>
 
-          <button
-            onClick={() => {
-              setOpen(false);
-              handleLogout();
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition"
-          >
-            <LogOut size={18} />
-            Logout
-          </button>
-        </div>
-      )}
+    <div className="mx-2 border-t border-zinc-700" />
+
+    <button
+      onClick={() => {
+        setOpen(false);
+        handleLogout();
+      }}
+      className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+    >
+      <LogOut size={18} />
+      Logout
+    </button>
+  </div>
+)}
     </div>
   );
 }
