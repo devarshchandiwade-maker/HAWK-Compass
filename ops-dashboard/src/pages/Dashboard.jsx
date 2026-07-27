@@ -1097,7 +1097,13 @@ function TaskForm({ task, onSave, onClose, users }) {
           <Field label="Due date">
             <input
               type="date"
-              className={`${inputCls} [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:invert`}
+              className={`${inputCls}
+                [&::-webkit-calendar-picker-indicator]:opacity-80
+                [&::-webkit-calendar-picker-indicator]:invert
+                [&::-webkit-calendar-picker-indicator]:sepia
+                [&::-webkit-calendar-picker-indicator]:saturate-0
+                [&::-webkit-calendar-picker-indicator]:brightness-200
+              `}
               value={f.dueDate}
               min={today}
               onChange={(e) => set("dueDate", e.target.value)}
@@ -3363,14 +3369,48 @@ function LeadForm({ lead, onSave, onClose }) {
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
 
   useEffect(() => {
-    setF((prev) => ({
-      ...prev,
-      probabilistic_revenue:
-        ((Number(prev.total_annual_revenue) || 0) *
-          (Number(prev.probability_closure) || 0)) /
-        100,
-    }));
-  }, [f.total_annual_revenue, f.probability_closure]);
+  const retainer = Number(f.retainer_amount) || 0;
+  const project = Number(f.project_amount) || 0;
+
+  let annual = 0;
+  let totalRevenue = 0;
+
+  if (f.deal_type === "Retainer") {
+    annual = retainer * 12;
+    totalRevenue = annual;
+  } else if (f.deal_type === "Project") {
+    annual = 0;
+    totalRevenue = project;
+  }
+
+  setF((prev) => ({
+    ...prev,
+    annual_retainer_value: annual,
+    total_annual_revenue: totalRevenue,
+    probabilistic_revenue:
+      (totalRevenue * (Number(prev.probability_closure) || 0)) / 100,
+  }));
+}, [
+  f.deal_type,
+  f.retainer_amount,
+  f.project_amount,
+  f.probability_closure,
+]);
+
+const defaultLeadStages = [
+  "New",
+  "Reached Out",
+  "Proposal Shared",
+  "Negotiation",
+  "Client's Final Response Awaited",
+  "Closed",
+  "Won",
+  "Lost",
+];
+
+const [leadStages, setLeadStages] = useState(defaultLeadStages);
+
+
 
   const probColor =
     f.probability_closure >= 70
@@ -3420,7 +3460,26 @@ function LeadForm({ lead, onSave, onClose }) {
               <select
                 className={inputCls}
                 value={f.deal_type}
-                onChange={(e) => set("deal_type", e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  if (value === "Retainer") {
+                    setF((prev) => ({
+                      ...prev,
+                      deal_type: value,
+                      project_amount: 0,
+                    }));
+                  } else if (value === "Project") {
+                    setF((prev) => ({
+                      ...prev,
+                      deal_type: value,
+                      retainer_amount: 0,
+                      annual_retainer_value: 0,
+                    }));
+                  } else {
+                    set("deal_type", value);
+                  }
+                }}
               >
                 <option value="">Select Type</option>
                 <option value="Retainer">Retainer</option>
@@ -3435,21 +3494,41 @@ function LeadForm({ lead, onSave, onClose }) {
           <SectionHeader icon={Tag} title="Status & Timeline" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="Lead Stage">
-              <select
-                className={inputCls}
-                value={f.lead_stage}
-                onChange={(e) => set("lead_stage", e.target.value)}
-              >
-                <option value="">Select Stage</option>
-                <option>New</option>
-                <option>Reached Out</option>
-                <option>Proposal Shared</option>
-                <option>Negotiation</option>
-                <option>Client's Final Response Awaited</option>
-                <option>Closed</option>
-                <option>Won</option>
-                <option>Lost</option>
-              </select>
+              <div className="flex gap-2">
+                <select
+                  className={`${inputCls} flex-1`}
+                  value={f.lead_stage}
+                  onChange={(e) => {
+                    if (e.target.value === "__add__") {
+                      const stage = prompt("Enter new Lead Stage");
+
+                      if (
+                        stage &&
+                        !leadStages.some(
+                          (s) => s.toLowerCase() === stage.toLowerCase()
+                        )
+                      ) {
+                        setLeadStages((prev) => [...prev, stage]);
+                        set("lead_stage", stage);
+                      }
+                    } else {
+                      set("lead_stage", e.target.value);
+                    }
+                  }}
+                >
+                  <option value="">Select Stage</option>
+
+                  {leadStages.map((stage) => (
+                    <option key={stage} value={stage}>
+                      {stage}
+                    </option>
+                  ))}
+
+                  <option value="__add__">
+                    ➕ Add New Stage
+                  </option>
+                </select>
+              </div>
             </Field>
 
             <Field label="Start Month">
@@ -3537,11 +3616,14 @@ function LeadForm({ lead, onSave, onClose }) {
                 </span>
                 <input
                   type="number"
-                  className={`${inputCls} pl-7`}
+                  className={`${inputCls} pl-7 ${
+                    f.deal_type === "Project"
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
+                  }`}
+                  disabled={f.deal_type === "Project"}
                   value={f.retainer_amount}
-                  onChange={(e) =>
-                    set("retainer_amount", Number(e.target.value))
-                  }
+                  onChange={(e) => set("retainer_amount", Number(e.target.value))}
                 />
               </div>
             </Field>
@@ -3553,11 +3635,9 @@ function LeadForm({ lead, onSave, onClose }) {
                 </span>
                 <input
                   type="number"
-                  className={`${inputCls} pl-7`}
+                  className={`${inputCls} pl-7 bg-zinc-900/40`}
                   value={f.annual_retainer_value}
-                  onChange={(e) =>
-                    set("annual_retainer_value", Number(e.target.value))
-                  }
+                  readOnly
                 />
               </div>
             </Field>
@@ -3569,11 +3649,14 @@ function LeadForm({ lead, onSave, onClose }) {
                 </span>
                 <input
                   type="number"
-                  className={`${inputCls} pl-7`}
+                  className={`${inputCls} pl-7 ${
+                    f.deal_type === "Retainer"
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
+                  }`}
+                  disabled={f.deal_type === "Retainer"}
                   value={f.project_amount}
-                  onChange={(e) =>
-                    set("project_amount", Number(e.target.value))
-                  }
+                  onChange={(e) => set("project_amount", Number(e.target.value))}
                 />
               </div>
             </Field>
@@ -3585,11 +3668,9 @@ function LeadForm({ lead, onSave, onClose }) {
                 </span>
                 <input
                   type="number"
-                  className={`${inputCls} pl-7 font-medium`}
+                  className={`${inputCls} pl-7 bg-zinc-900/40 font-medium`}
                   value={f.total_annual_revenue}
-                  onChange={(e) =>
-                    set("total_annual_revenue", Number(e.target.value))
-                  }
+                  readOnly
                 />
               </div>
             </Field>
