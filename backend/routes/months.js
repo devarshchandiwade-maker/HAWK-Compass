@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const pool = require("../db/db");
-const { parseSalRet } = require("./parsesalret");
+const { parseSalRet } = require("../controllers/parsesalret");
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
