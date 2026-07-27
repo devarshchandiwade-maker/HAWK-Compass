@@ -86,6 +86,7 @@ import { useNavigate } from "react-router-dom";
 import PipelineToast from "../components/PipelineToast";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import UserMenu from "../components/UserMenu";
+import Salretview from "../components/Salretview"
 
 /* ------------------------------------------------------------------ */
 /* helpers                                                             */
@@ -4007,398 +4008,402 @@ function detectRevenue(wb, brands, salaryCost, matrixSheet) {
   return revenue;
 }
 
-function SalRetView() {
-  const [loaded, setLoaded] = useState(false);
-  const [months, setMonths] = useState({}); // { monthKey: parsedData }
-  const [revBy, setRevBy] = useState({}); // { monthKey: { brand: override } }
-  const [selected, setSelected] = useState("");
-  const [pin, setPin] = useState("");
-  const [unlocked, setUnlocked] = useState(false);
-  const [pinInput, setPinInput] = useState("");
-  const [pinErr, setPinErr] = useState(false);
-  const [showPinMgr, setShowPinMgr] = useState(false);
-  const [search, setSearch] = useState("");
-  const [expanded, setExpanded] = useState({});
-  const [note, setNote] = useState("");
-  const fileRef = useRef();
+// function SalRetView() {
+//   const [loaded, setLoaded] = useState(false);
+//   const [months, setMonths] = useState({}); // { monthKey: parsedData }
+//   const [revBy, setRevBy] = useState({}); // { monthKey: { brand: override } }
+//   const [selected, setSelected] = useState("");
+//   const [pin, setPin] = useState("");
+//   const [unlocked, setUnlocked] = useState(false);
+//   const [pinInput, setPinInput] = useState("");
+//   const [pinErr, setPinErr] = useState(false);
+//   const [showPinMgr, setShowPinMgr] = useState(false);
+//   const [search, setSearch] = useState("");
+//   const [expanded, setExpanded] = useState({});
+//   const [note, setNote] = useState("");
+//   const fileRef = useRef();
 
-  useEffect(() => {
-    (async () => {
-      let m = await store.get(SR_MONTHS, null);
-      let rb = await store.get(SR_REVBY, null);
-      if (!m) {
-        // migrate a previously imported single month, if any
-        const legacy = await store.get(SR_DATA, null);
-        const legacyRev = await store.get(SR_REV, {});
-        if (legacy) {
-          const key = legacy.month || legacy.sheet || "imported";
-          m = { [key]: legacy };
-          rb = { [key]: { ...(legacy.retainer || {}), ...legacyRev } };
-        } else {
-          m = {};
-          rb = {};
-        }
-        store.set(SR_MONTHS, m);
-        store.set(SR_REVBY, rb || {});
-      }
-      if (!rb) rb = {};
-      setMonths(m);
-      setRevBy(rb);
-      const keys = Object.keys(m).sort();
-      setSelected(keys[keys.length - 1] || "");
-      const p = await store.get(SR_PIN, "");
-      setPin(p);
-      setUnlocked(!p);
-      setLoaded(true);
-    })();
-  }, []);
+//   useEffect(() => {
+//     (async () => {
+//       let m = await store.get(SR_MONTHS, null);
+//       let rb = await store.get(SR_REVBY, null);
+//       if (!m) {
+//         // migrate a previously imported single month, if any
+//         const legacy = await store.get(SR_DATA, null);
+//         const legacyRev = await store.get(SR_REV, {});
+//         if (legacy) {
+//           const key = legacy.month || legacy.sheet || "imported";
+//           m = { [key]: legacy };
+//           rb = { [key]: { ...(legacy.retainer || {}), ...legacyRev } };
+//         } else {
+//           m = {};
+//           rb = {};
+//         }
+//         store.set(SR_MONTHS, m);
+//         store.set(SR_REVBY, rb || {});
+//       }
+//       if (!rb) rb = {};
+//       setMonths(m);
+//       setRevBy(rb);
+//       const keys = Object.keys(m).sort();
+//       setSelected(keys[keys.length - 1] || "");
+//       const p = await store.get(SR_PIN, "");
+//       setPin(p);
+//       setUnlocked(!p);
+//       setLoaded(true);
+//     })();
+//   }, []);
 
-  const onFile = (file) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const wb = XLSX.read(e.target.result, {
-          type: "array",
-          cellDates: true,
-        });
-        const parsed = parseSalRet(wb);
-        if (!parsed) {
-          setNote(
-            "Couldn't find the Sal-to-Ret matrix. It needs an 'Employee Name' and 'Salary' header with brand columns.",
-          );
-          return;
-        }
-        const key = parsed.month || parsed.sheet || "import-" + Date.now();
-        const nextMonths = { ...months, [key]: parsed };
-        const nextRev = {
-          ...revBy,
-          [key]: { ...parsed.retainer, ...(revBy[key] || {}) },
-        };
-        setMonths(nextMonths);
-        store.set(SR_MONTHS, nextMonths);
-        setRevBy(nextRev);
-        store.set(SR_REVBY, nextRev);
-        setSelected(key);
-        setNote(
-          `Imported ${monthLabel(key)} — ${parsed.employees.length} people across ${parsed.brands.length} brands.`,
-        );
-        setTimeout(() => setNote(""), 5000);
-      } catch {
-        setNote("That file couldn't be read.");
-      }
-    };
-    reader.readAsArrayBuffer(file);
-    if (fileRef.current) fileRef.current.value = "";
-  };
+//   const onFile = (file) => {
+//     if (!file) return;
+//     const reader = new FileReader();
+//     reader.onload = (e) => {
+//       try {
+//         const wb = XLSX.read(e.target.result, {
+//           type: "array",
+//           cellDates: true,
+//         });
+//         const parsed = parseSalRet(wb);
+//         if (!parsed) {
+//           setNote(
+//             "Couldn't find the Sal-to-Ret matrix. It needs an 'Employee Name' and 'Salary' header with brand columns.",
+//           );
+//           return;
+//         }
+//         const key = parsed.month || parsed.sheet || "import-" + Date.now();
+//         const nextMonths = { ...months, [key]: parsed };
+//         const nextRev = {
+//           ...revBy,
+//           [key]: { ...parsed.retainer, ...(revBy[key] || {}) },
+//         };
+//         setMonths(nextMonths);
+//         store.set(SR_MONTHS, nextMonths);
+//         setRevBy(nextRev);
+//         store.set(SR_REVBY, nextRev);
+//         setSelected(key);
+//         setNote(
+//           `Imported ${monthLabel(key)} — ${parsed.employees.length} people across ${parsed.brands.length} brands.`,
+//         );
+//         setTimeout(() => setNote(""), 5000);
+//       } catch {
+//         setNote("That file couldn't be read.");
+//       }
+//     };
+//     reader.readAsArrayBuffer(file);
+//     if (fileRef.current) fileRef.current.value = "";
+//   };
 
-  const data = months[selected] || null;
-  const selRev = revBy[selected] || {};
+//   const data = months[selected] || null;
+//   const selRev = revBy[selected] || {};
 
-  const updateRev = (brand, value) => {
-    const v = Number(String(value).replace(/[^0-9.]/g, "")) || 0;
-    const next = { ...revBy, [selected]: { ...selRev, [brand]: v } };
-    setRevBy(next);
-    store.set(SR_REVBY, next);
-  };
+//   const updateRev = (brand, value) => {
+//     const v = Number(String(value).replace(/[^0-9.]/g, "")) || 0;
+//     const next = { ...revBy, [selected]: { ...selRev, [brand]: v } };
+//     setRevBy(next);
+//     store.set(SR_REVBY, next);
+//   };
 
-  // totals for any month (used for the year-to-date trend)
-  const totalsFor = (mk) => {
-    const m = months[mk];
-    if (!m) return { sal: 0, rev: 0, overall: null };
-    const ov = revBy[mk] || {};
-    const sal = m.grandSalary || 0;
-    const rev = m.brands.reduce(
-      (s, b) => s + (Number(ov[b] ?? m.retainer[b]) || 0),
-      0,
-    );
-    return { sal, rev, overall: rev > 0 ? sal / rev : null };
-  };
+//   // totals for any month (used for the year-to-date trend)
+//   const totalsFor = (mk) => {
+//     const m = months[mk];
+//     if (!m) return { sal: 0, rev: 0, overall: null };
+//     const ov = revBy[mk] || {};
+//     const sal = m.grandSalary || 0;
+//     const rev = m.brands.reduce(
+//       (s, b) => s + (Number(ov[b] ?? m.retainer[b]) || 0),
+//       0,
+//     );
+//     return { sal, rev, overall: rev > 0 ? sal / rev : null };
+//   };
 
-  const monthKeys = Object.keys(months).sort();
-  const series = monthKeys.map((mk) => {
-    const t = totalsFor(mk);
-    return {
-      key: mk,
-      label: monthLabel(mk),
-      pct: t.overall != null ? +(t.overall * 100).toFixed(1) : null,
-      ...t,
-    };
-  });
-  const ytdSal = series.reduce(
-    (s, x) => s + (x.overall != null ? x.sal : 0),
-    0,
-  );
-  const ytdRev = series.reduce(
-    (s, x) => s + (x.overall != null ? x.rev : 0),
-    0,
-  );
-  const ytdOverall = ytdRev > 0 ? ytdSal / ytdRev : null;
+//   const monthKeys = Object.keys(months).sort();
+//   const series = monthKeys.map((mk) => {
+//     const t = totalsFor(mk);
+//     return {
+//       key: mk,
+//       label: monthLabel(mk),
+//       pct: t.overall != null ? +(t.overall * 100).toFixed(1) : null,
+//       ...t,
+//     };
+//   });
+//   const ytdSal = series.reduce(
+//     (s, x) => s + (x.overall != null ? x.sal : 0),
+//     0,
+//   );
+//   const ytdRev = series.reduce(
+//     (s, x) => s + (x.overall != null ? x.rev : 0),
+//     0,
+//   );
+//   const ytdOverall = ytdRev > 0 ? ytdSal / ytdRev : null;
 
-  const rows = useMemo(() => {
-    if (!data) return [];
-    return data.brands
-      .map((b) => {
-        const sal = data.salaryCost[b] || 0;
-        const revenue = Number(selRev[b] ?? data.retainer[b]) || 0;
-        const people = data.employees
-          .filter((e) => e.alloc[b] > 0)
-          .map((e) => ({
-            name: e.name,
-            desig: e.desig,
-            salary: e.salary,
-            alloc: e.alloc[b],
-            contrib: e.salary * e.alloc[b],
-          }))
-          .sort((a, c) => c.contrib - a.contrib);
-        return {
-          brand: b,
-          sal,
-          revenue,
-          pct: revenue > 0 ? sal / revenue : null,
-          people,
-        };
-      })
-      .filter((r) => r.sal > 0 || r.revenue > 0 || r.people.length > 0)
-      .sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
-  }, [data, selRev]);
+//   const rows = useMemo(() => {
+//     if (!data) return [];
+//     return data.brands
+//       .map((b) => {
+//         const sal = data.salaryCost[b] || 0;
+//         const revenue = Number(selRev[b] ?? data.retainer[b]) || 0;
+//         const people = data.employees
+//           .filter((e) => e.alloc[b] > 0)
+//           .map((e) => ({
+//             name: e.name,
+//             desig: e.desig,
+//             salary: e.salary,
+//             alloc: e.alloc[b],
+//             contrib: e.salary * e.alloc[b],
+//           }))
+//           .sort((a, c) => c.contrib - a.contrib);
+//         return {
+//           brand: b,
+//           sal,
+//           revenue,
+//           pct: revenue > 0 ? sal / revenue : null,
+//           people,
+//         };
+//       })
+//       .filter((r) => r.sal > 0 || r.revenue > 0 || r.people.length > 0)
+//       .sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
+//   }, [data, selRev]);
 
-  const withPct = rows.filter((r) => r.pct != null);
-  const avg = withPct.length
-    ? withPct.reduce((s, r) => s + r.pct, 0) / withPct.length
-    : null;
-  const best = withPct.length
-    ? withPct.reduce((a, b) => (b.pct < a.pct ? b : a))
-    : null;
-  const worst = withPct.length
-    ? withPct.reduce((a, b) => (b.pct > a.pct ? b : a))
-    : null;
-  const central = data ? data.central || 0 : 0;
-  const sel = data ? totalsFor(selected) : { sal: 0, rev: 0, overall: null };
-  const rampups = rows.filter((r) => r.revenue <= 0 && r.sal > 0).length;
+//   const withPct = rows.filter((r) => r.pct != null);
+//   const avg = withPct.length
+//     ? withPct.reduce((s, r) => s + r.pct, 0) / withPct.length
+//     : null;
+//   const best = withPct.length
+//     ? withPct.reduce((a, b) => (b.pct < a.pct ? b : a))
+//     : null;
+//   const worst = withPct.length
+//     ? withPct.reduce((a, b) => (b.pct > a.pct ? b : a))
+//     : null;
+//   const central = data ? data.central || 0 : 0;
+//   const sel = data ? totalsFor(selected) : { sal: 0, rev: 0, overall: null };
+//   const rampups = rows.filter((r) => r.revenue <= 0 && r.sal > 0).length;
 
-  const filtered = search.trim()
-    ? rows.filter((r) =>
-        r.brand.toLowerCase().includes(search.trim().toLowerCase()),
-      )
-    : rows;
+//   const filtered = search.trim()
+//     ? rows.filter((r) =>
+//         r.brand.toLowerCase().includes(search.trim().toLowerCase()),
+//       )
+//     : rows;
 
-  /* ---- locked state ---- */
-  if (!loaded)
-    return (
-      <div className="py-16 text-center text-sm text-zinc-500">Loading…</div>
-    );
+//   /* ---- locked state ---- */
+//   if (!loaded)
+//     return (
+//       <div className="py-16 text-center text-sm text-zinc-500">Loading…</div>
+//     );
 
-  if (pin && !unlocked) {
-    const tryUnlock = () => {
-      if (pinInput === pin) {
-        setUnlocked(true);
-        setPinInput("");
-        setPinErr(false);
-      } else setPinErr(true);
-    };
-    return (
-      <div className="mx-auto mt-12 max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 text-center">
-        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800">
-          <Lock size={18} className="text-zinc-300" />
-        </div>
-        <h3 className="text-sm font-semibold text-zinc-100">
-          This section is locked
-        </h3>
-        <p className="mt-1 text-xs text-zinc-500">
-          Salary data is private. Enter your PIN to view.
-        </p>
-        <input
-          type="password"
-          autoFocus
-          value={pinInput}
-          onChange={(e) => {
-            setPinInput(e.target.value);
-            setPinErr(false);
-          }}
-          onKeyDown={(e) => e.key === "Enter" && tryUnlock()}
-          className={`${inputCls} mt-4 text-center tracking-widest`}
-          placeholder="••••"
-        />
-        {pinErr && <p className="mt-2 text-xs text-red-400">Wrong PIN.</p>}
-        <button
-          onClick={tryUnlock}
-          className="mt-3 w-full rounded-md btn-primary px-4 py-2 text-xs font-medium text-white hover:bg-red-500"
-        >
-          Unlock
-        </button>
-      </div>
-    );
-  }
+//   if (pin && !unlocked) {
+//     const tryUnlock = () => {
+//       if (pinInput === pin) {
+//         setUnlocked(true);
+//         setPinInput("");
+//         setPinErr(false);
+//       } else setPinErr(true);
+//     };
+//     return (
+//       <div className="mx-auto mt-12 max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 text-center">
+//         <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800">
+//           <Lock size={18} className="text-zinc-300" />
+//         </div>
+//         <h3 className="text-sm font-semibold text-zinc-100">
+//           This section is locked
+//         </h3>
+//         <p className="mt-1 text-xs text-zinc-500">
+//           Salary data is private. Enter your PIN to view.
+//         </p>
+//         <input
+//           type="password"
+//           autoFocus
+//           value={pinInput}
+//           onChange={(e) => {
+//             setPinInput(e.target.value);
+//             setPinErr(false);
+//           }}
+//           onKeyDown={(e) => e.key === "Enter" && tryUnlock()}
+//           className={`${inputCls} mt-4 text-center tracking-widest`}
+//           placeholder="••••"
+//         />
+//         {pinErr && <p className="mt-2 text-xs text-red-400">Wrong PIN.</p>}
+//         <button
+//           onClick={tryUnlock}
+//           className="mt-3 w-full rounded-md btn-primary px-4 py-2 text-xs font-medium text-white hover:bg-red-500"
+//         >
+//           Unlock
+//         </button>
+//       </div>
+//     );
+//   }
 
-  return (
-    <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-            Salary-to-Retainer{" "}
-            <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-zinc-400">
-              PRIVATE
-            </span>
-          </h2>
-          <p className="text-xs text-zinc-500">
-            {monthKeys.length
-              ? `${monthKeys.length} month${monthKeys.length > 1 ? "s" : ""} tracked toward the 46% goal`
-              : "Import the monthly Finance sheet to begin."}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {monthKeys.length > 0 && (
-            <select
-              value={selected}
-              onChange={(e) => setSelected(e.target.value)}
-              className={inputCls + " w-auto"}
-            >
-              {monthKeys.map((mk) => (
-                <option key={mk} value={mk}>
-                  {monthLabel(mk)}
-                </option>
-              ))}
-            </select>
-          )}
-          <button
-            onClick={() => setShowPinMgr(true)}
-            className="flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
-          >
-            {pin ? <Lock size={14} /> : <Unlock size={14} />}{" "}
-            {pin ? "PIN set" : "Set PIN"}
-          </button>
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-1.5 rounded-md btn-primary px-3 py-2 text-xs font-medium text-white hover:bg-red-500"
-          >
-            <Upload size={14} /> Import month
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".xlsx,.xls"
-            className="hidden"
-            onChange={(e) => onFile(e.target.files?.[0])}
-          />
-        </div>
-      </div>
+//   return (
+//     <div>
+//       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+//         <div>
+//           <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
+//             Salary-to-Retainer{" "}
+//             <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-zinc-400">
+//               PRIVATE
+//             </span>
+//           </h2>
+//           <p className="text-xs text-zinc-500">
+//             {monthKeys.length
+//               ? `${monthKeys.length} month${monthKeys.length > 1 ? "s" : ""} tracked toward the 46% goal`
+//               : "Import the monthly Finance sheet to begin."}
+//           </p>
+//         </div>
+//         <div className="flex flex-wrap gap-2">
+//           {monthKeys.length > 0 && (
+//             <select
+//               value={selected}
+//               onChange={(e) => setSelected(e.target.value)}
+//               className={inputCls + " w-auto"}
+//             >
+//               {monthKeys.map((mk) => (
+//                 <option key={mk} value={mk}>
+//                   {monthLabel(mk)}
+//                 </option>
+//               ))}
+//             </select>
+//           )}
+//           <button
+//             onClick={() => setShowPinMgr(true)}
+//             className="flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+//           >
+//             {pin ? <Lock size={14} /> : <Unlock size={14} />}{" "}
+//             {pin ? "PIN set" : "Set PIN"}
+//           </button>
+//           <button
+//             onClick={() => fileRef.current?.click()}
+//             className="flex items-center gap-1.5 rounded-md btn-primary px-3 py-2 text-xs font-medium text-white hover:bg-red-500"
+//           >
+//             <Upload size={14} /> Import month
+//           </button>
+//           <input
+//             ref={fileRef}
+//             type="file"
+//             accept=".xlsx,.xls"
+//             className="hidden"
+//             onChange={(e) => onFile(e.target.files?.[0])}
+//           />
+//         </div>
+//       </div>
 
-      {note && (
-        <div className="mb-3 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-zinc-300">
-          {note}
-        </div>
-      )}
+//       {note && (
+//         <div className="mb-3 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-zinc-300">
+//           {note}
+//         </div>
+//       )}
 
-      {!data ? (
-        <EmptyState
-          icon={Percent}
-          title="No salary data yet"
-          hint="Import your monthly 'Sal to Ret' sheet. Each month is kept, so you can switch between them and watch the year-to-date number track against your 46% target."
-        />
-      ) : (
-        <>
-          {/* year to date */}
-          <YtdPanel
-            series={series.filter((s) => s.overall != null)}
-            ytdOverall={ytdOverall}
-            ytdSal={ytdSal}
-            ytdRev={ytdRev}
-            selected={selected}
-            onPick={setSelected}
-          />
+//       {!data ? (
+//         <EmptyState
+//           icon={Percent}
+//           title="No salary data yet"
+//           hint="Import your monthly 'Sal to Ret' sheet. Each month is kept, so you can switch between them and watch the year-to-date number track against your 46% target."
+//         />
+//       ) : (
+//         <>
+//           {/* year to date */}
+//           <YtdPanel
+//             series={series.filter((s) => s.overall != null)}
+//             ytdOverall={ytdOverall}
+//             ytdSal={ytdSal}
+//             ytdRev={ytdRev}
+//             selected={selected}
+//             onPick={setSelected}
+//           />
 
-          {/* selected month */}
-          <div className="mb-2 mt-6 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
-            <span
-              className="h-1.5 w-1.5 rounded-full"
-              style={{ background: "#7c63ff" }}
-            />{" "}
-            {monthLabel(selected)} · detail
-          </div>
-          <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Kpi
-              label="Overall Sal/Ret %"
-              value={pct(sel.overall)}
-              sub={`vs 46% target · avg ${pct(avg)}`}
-              accent={sel.overall != null && sel.overall > SR_TARGET}
-            />
-            <Kpi
-              label="Brands tracked"
-              value={String(rows.length)}
-              sub={`${data.employees.length} people · ${inrShort(central)} central${rampups ? ` · ${rampups} ramp-up` : ""}`}
-            />
-            <Kpi
-              label="Best brand (lowest)"
-              value={best ? pct(best.pct) : "—"}
-              sub={best ? best.brand : ""}
-            />
-            <Kpi
-              label="Worst brand (highest)"
-              value={worst ? pct(worst.pct) : "—"}
-              sub={worst ? worst.brand : ""}
-              accent={worst != null && worst.pct > SR_TARGET}
-            />
-          </div>
+//           {/* selected month */}
+//           <div className="mb-2 mt-6 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+//             <span
+//               className="h-1.5 w-1.5 rounded-full"
+//               style={{ background: "#7c63ff" }}
+//             />{" "}
+//             {monthLabel(selected)} · detail
+//           </div>
+//           <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+//             <Kpi
+//               label="Overall Sal/Ret %"
+//               value={pct(sel.overall)}
+//               sub={`vs 46% target · avg ${pct(avg)}`}
+//               accent={sel.overall != null && sel.overall > SR_TARGET}
+//             />
+//             <Kpi
+//               label="Brands tracked"
+//               value={String(rows.length)}
+//               sub={`${data.employees.length} people · ${inrShort(central)} central${rampups ? ` · ${rampups} ramp-up` : ""}`}
+//             />
+//             <Kpi
+//               label="Best brand (lowest)"
+//               value={best ? pct(best.pct) : "—"}
+//               sub={best ? best.brand : ""}
+//             />
+//             <Kpi
+//               label="Worst brand (highest)"
+//               value={worst ? pct(worst.pct) : "—"}
+//               sub={worst ? worst.brand : ""}
+//               accent={worst != null && worst.pct > SR_TARGET}
+//             />
+//           </div>
 
-          {sel.overall != null && (
-            <Insight
-              overall={sel.overall}
-              totalSal={sel.sal}
-              totalRev={sel.rev}
-              central={central}
-              rows={withPct}
-            />
-          )}
+//           {sel.overall != null && (
+//             <Insight
+//               overall={sel.overall}
+//               totalSal={sel.sal}
+//               totalRev={sel.rev}
+//               central={central}
+//               rows={withPct}
+//             />
+//           )}
 
-          <div className="relative mb-3">
-            <Search
-              size={15}
-              className="pointer-events-none absolute left-3 top-2.5 text-zinc-500"
-            />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Filter brands… (e.g. JIO, Tata, ACKO)"
-              className={inputCls + " pl-9"}
-            />
-          </div>
+//           <div className="relative mb-3">
+//             <Search
+//               size={15}
+//               className="pointer-events-none absolute left-3 top-2.5 text-zinc-500"
+//             />
+//             <input
+//               value={search}
+//               onChange={(e) => setSearch(e.target.value)}
+//               placeholder="Filter brands… (e.g. JIO, Tata, ACKO)"
+//               className={inputCls + " pl-9"}
+//             />
+//           </div>
 
-          <div className="space-y-2">
-            {filtered.map((r) => (
-              <BrandRow
-                key={r.brand}
-                r={r}
-                expanded={!!expanded[r.brand]}
-                onToggle={() =>
-                  setExpanded((p) => ({ ...p, [r.brand]: !p[r.brand] }))
-                }
-                onRev={(v) => updateRev(r.brand, v)}
-              />
-            ))}
-            {filtered.length === 0 && (
-              <div className="rounded-lg border border-dashed border-zinc-800 py-8 text-center text-xs text-zinc-500">
-                No brands match "{search}".
-              </div>
-            )}
-          </div>
-        </>
-      )}
+//           <div className="space-y-2">
+//             {filtered.map((r) => (
+//               <BrandRow
+//                 key={r.brand}
+//                 r={r}
+//                 expanded={!!expanded[r.brand]}
+//                 onToggle={() =>
+//                   setExpanded((p) => ({ ...p, [r.brand]: !p[r.brand] }))
+//                 }
+//                 onRev={(v) => updateRev(r.brand, v)}
+//               />
+//             ))}
+//             {filtered.length === 0 && (
+//               <div className="rounded-lg border border-dashed border-zinc-800 py-8 text-center text-xs text-zinc-500">
+//                 No brands match "{search}".
+//               </div>
+//             )}
+//           </div>
+//         </>
+//       )}
 
-      {showPinMgr && (
-        <PinManager
-          current={pin}
-          onClose={() => setShowPinMgr(false)}
-          onSave={(p) => {
-            setPin(p);
-            store.set(SR_PIN, p);
-            setUnlocked(true);
-            setShowPinMgr(false);
-          }}
-        />
-      )}
-    </div>
-  );
+//       {showPinMgr && (
+//         <PinManager
+//           current={pin}
+//           onClose={() => setShowPinMgr(false)}
+//           onSave={(p) => {
+//             setPin(p);
+//             store.set(SR_PIN, p);
+//             setUnlocked(true);
+//             setShowPinMgr(false);
+//           }}
+//         />
+//       )}
+//     </div>
+//   );
+// }
+
+function SalRetView(){
+  return <Salretview />
 }
 
 function YtdPanel({ series, ytdOverall, ytdSal, ytdRev, selected, onPick }) {

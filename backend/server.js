@@ -10,6 +10,10 @@ const authRoutes=require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const notificationRoutes=require("./routes/notificationRoutes");
+
+const monthsRouter = require("./routes/months");
+const settingsRouter = require("./routes/settings");
+
 require("./cron/reminderCron");
 
 
@@ -27,6 +31,11 @@ app.use("/api/auth",authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/notifications",notificationRoutes);
+
+app.use("/api/months", monthsRouter);
+app.use("/api/settings", settingsRouter);
+ 
+app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
 
 
