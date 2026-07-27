@@ -77,7 +77,7 @@ import {
 
 import { fetchUsers } from "../services/userService";
 
-import { extractTasksFromImage } from "../api/aiApi";
+import { extractTasksFromImage, getSalaryInsight } from "../api/aiApi";
 
 import Login from "./Login";
 import { getPermissions } from "../api/authApi";
