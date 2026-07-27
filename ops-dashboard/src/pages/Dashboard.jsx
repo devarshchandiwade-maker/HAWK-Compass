@@ -3856,7 +3856,7 @@ function Modal({ title, onClose, children }) {
   );
 }
  
-export default function SalRetView() {
+function SalRetView() {
   const [loaded, setLoaded] = useState(false);
   const [months, setMonths] = useState([]); // [{month_key, grand_salary, total_retainer, overall_pct}]
   const [detail, setDetail] = useState(null); // GET /api/months/:key result
