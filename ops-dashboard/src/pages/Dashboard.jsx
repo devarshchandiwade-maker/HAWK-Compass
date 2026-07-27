@@ -3186,20 +3186,113 @@ function PipelineStats({ leads }) {
 }
 
 function StartMonthChart({ leads }) {
-  const grouped = leads.reduce((acc, l) => {
-    const key = l.start_month || "Unspecified";
-    if (!acc[key]) acc[key] = { month: key, count: 0, revenue: 0 };
-    acc[key].count += 1;
-    acc[key].revenue += Number(l.total_annual_revenue) || 0;
-    return acc;
-  }, {});
 
-  const data = Object.values(grouped).sort((a, b) => {
-    const da = new Date(a.month);
-    const db = new Date(b.month);
-    if (!isNaN(da) && !isNaN(db)) return da - db;
-    return a.month.localeCompare(b.month);
-  });
+  const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+const normalizeMonth = (value) => {
+  if (!value || value === "0") return null;
+
+  const str = value.toString().trim().toLowerCase();
+
+  if (str.startsWith("jan")) return "January";
+  if (str.startsWith("feb")) return "February";
+  if (str.startsWith("mar")) return "March";
+  if (str.startsWith("apr")) return "April";
+  if (str.startsWith("may")) return "May";
+  if (str.startsWith("jun")) return "June";
+  if (str.startsWith("jul")) return "July";
+  if (str.startsWith("aug")) return "August";
+  if (str.startsWith("sep")) return "September";
+  if (str.startsWith("oct")) return "October";
+  if (str.startsWith("nov")) return "November";
+  if (str.startsWith("dec")) return "December";
+
+  return null;
+};
+
+const grouped = leads.reduce((acc, lead) => {
+  const month = normalizeMonth(lead.start_month);
+
+  if (!month) return acc;
+
+  if (!acc[month]) {
+    acc[month] = {
+      month,
+      totalLeads: 0,
+      pitchDone: 0,
+      pitchNotDone: 0,
+      revenue: 0,
+    };
+  }
+
+  acc[month].totalLeads++;
+
+  if (String(lead.pitch).trim().toUpperCase() === "Y") {
+    acc[month].pitchDone++;
+  } else {
+    acc[month].pitchNotDone++;
+  }
+
+  acc[month].revenue += Number(lead.total_annual_revenue || 0);
+
+  return acc;
+}, {});
+
+const CustomTooltip = ({ active, payload }) => {
+  if (!active || !payload?.length) return null;
+
+  const d = payload[0].payload;
+
+  return (
+    <div className="rounded-lg border border-zinc-700 bg-zinc-900 p-3 text-sm shadow-lg">
+      <div className="mb-2 text-white font-semibold">
+        {d.month}
+      </div>
+
+      <div className="flex justify-between gap-10">
+        <span>Total Leads</span>
+        <span>{d.totalLeads}</span>
+      </div>
+
+      <div className="flex justify-between gap-10">
+        <span className="text-green-400">Pitch Done</span>
+        <span>{d.pitchDone}</span>
+      </div>
+
+      <div className="flex justify-between gap-10">
+        <span className="text-red-400">Pitch Not Done</span>
+        <span>{d.pitchNotDone}</span>
+      </div>
+
+      <div className="mt-2 border-t border-zinc-700 pt-2 flex justify-between gap-10">
+        <span>Revenue</span>
+        <span>{inr(d.revenue)}</span>
+      </div>
+    </div>
+  );
+};
+
+
+  const data = monthNames.map((month) => ({
+  month,
+  totalLeads: grouped[month]?.totalLeads || 0,
+  pitchDone: grouped[month]?.pitchDone || 0,
+  pitchNotDone: grouped[month]?.pitchNotDone || 0,
+  revenue: grouped[month]?.revenue || 0,
+}));
 
   if (data.length === 0) return null;
 
@@ -3222,17 +3315,16 @@ function StartMonthChart({ leads }) {
             <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
             <XAxis
               dataKey="month"
-              tick={{ fill: "#a1a1aa", fontSize: 11 }}
-              axisLine={{ stroke: "#3f3f46" }}
-              tickLine={false}
+              tickFormatter={(month) => month.substring(0, 3)}
             />
+
             <YAxis
               allowDecimals={false}
               tick={{ fill: "#a1a1aa", fontSize: 11 }}
               axisLine={false}
               tickLine={false}
             />
-            <Tooltip
+            {/* <Tooltip
               cursor={{ stroke: "#3f3f46", strokeWidth: 1 }}
               contentStyle={{
                 backgroundColor: "#18181b",
@@ -3244,14 +3336,12 @@ function StartMonthChart({ leads }) {
               formatter={(value, name) =>
                 name === "count" ? [value, "Leads"] : [inr(value), "Revenue"]
               }
-            />
+            /> */}
+            <Tooltip content={<CustomTooltip />} />
             <Line
-              type="monotone"
-              dataKey="count"
+              dataKey="totalLeads"
               stroke="#ef4444"
               strokeWidth={2.5}
-              dot={{ fill: "#ef4444", r: 3.5, strokeWidth: 0 }}
-              activeDot={{ r: 5 }}
             />
           </LineChart>
         </ResponsiveContainer>
