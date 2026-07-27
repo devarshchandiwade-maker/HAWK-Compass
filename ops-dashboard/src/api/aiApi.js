@@ -17,5 +17,6 @@ export const extractTasksFromImage = async (file) => {
     return data.result;
 };
 
-export const getSalaryInsight = (data) =>
-  axios.post("/salary-insight", data);
+export const getSalaryInsight = async (data) => {
+  return API.post("/salary-insight", data);
+};
