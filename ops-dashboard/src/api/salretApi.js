@@ -1,6 +1,6 @@
 // Thin wrapper around the Sal-to-Ret backend. Swap API_BASE for your deployed
 // API origin (or wire up a Vite/webpack proxy so this can stay a relative path).
-const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:4000";
+const API_BASE = `${import.meta.env.VITE_API_URL}`
 
 async function request(path, opts = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
