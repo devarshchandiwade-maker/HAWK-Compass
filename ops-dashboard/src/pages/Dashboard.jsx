@@ -612,7 +612,7 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
     } catch (err) {
       console.error(err);
 
-      alert("Failed to import tasks");
+      // alert("Failed to import tasks");
     }
   };
 
@@ -1026,6 +1026,7 @@ function TaskForm({ task, onSave, onClose, users }) {
           notes: "",
         },
   );
+  const today = new Date().toISOString().split("T")[0];
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   console.log(task);
   return (
@@ -1091,8 +1092,9 @@ function TaskForm({ task, onSave, onClose, users }) {
           <Field label="Due date">
             <input
               type="date"
-              className={inputCls}
+              className={`${inputCls} [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:invert`}
               value={f.dueDate}
+              min={today}
               onChange={(e) => set("dueDate", e.target.value)}
             />
           </Field>
