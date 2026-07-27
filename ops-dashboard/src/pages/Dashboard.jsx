@@ -550,8 +550,8 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
 
       setShowForm(false);
       setEditing(null);
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
+      console.error(e);
       alert("Failed to save task");
     }
   };

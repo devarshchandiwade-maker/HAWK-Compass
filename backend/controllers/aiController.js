@@ -1,9 +1,5 @@
 const fs = require("fs");
-const { GoogleGenAI } = require("@google/genai");
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+const axios = require("axios");
 
 const extractTasks = async (req, res) => {
   let filePath = null;
@@ -31,61 +27,64 @@ Return ONLY valid JSON.
 Example:
 
 {
-  "tasks":[
+  "tasks": [
     {
-      "title":"",
-      "assignee":"",
-      "priority":"Low",
-      "status":"To Do",
-      "due_date":"",
-      "notes":""
+      "title": "",
+      "assignee": "",
+      "priority": "Low",
+      "status": "To Do",
+      "due_date": "",
+      "notes": ""
     }
   ]
 }
 `;
 
-    const response = await ai.models.generateContent({
-  model: "gemini-3.6-flash",
-  contents: [
-    {
-      parts: [
-        { text: prompt },
-        {
-          inlineData: {
-            mimeType: req.file.mimetype,
-            data: base64,
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt,
+              },
+              {
+                inlineData: {
+                  mimeType: req.file.mimetype,
+                  data: base64,
+                },
+              },
+            ],
           },
+        ],
+        generationConfig: {
+          temperature: 0,
+          responseMimeType: "application/json",
         },
-      ],
-    },
-  ],
-  config: {
-    responseMimeType: "application/json",
-    temperature: 0,
-  },
-});
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-const parsed = JSON.parse(response.text);
-
-    const raw = response.text;
-
-    const cleaned = raw
-      .replace(/```json/gi, "")
-      .replace(/```/g, "")
-      .trim();
+    const raw =
+      response.data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     let parsed;
 
     try {
-      parsed = JSON.parse(cleaned);
+      parsed = JSON.parse(raw);
     } catch (e) {
-      console.error("Failed to parse AI response:");
-      console.error(cleaned);
+      console.error("Invalid JSON from Gemini:");
+      console.error(raw);
 
       return res.status(500).json({
         success: false,
         message: "Gemini returned invalid JSON",
-        raw: cleaned,
+        raw,
       });
     }
 
@@ -93,7 +92,7 @@ const parsed = JSON.parse(response.text);
       fs.unlinkSync(filePath);
     }
 
-    res.json({
+    return res.json({
       success: true,
       result: parsed,
     });
@@ -102,11 +101,13 @@ const parsed = JSON.parse(response.text);
       fs.unlinkSync(filePath);
     }
 
-    console.error(err);
+    console.error(
+      JSON.stringify(err.response?.data || err.message, null, 2)
+    );
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      error: err.message,
+      error: err.response?.data || err.message,
     });
   }
 };
