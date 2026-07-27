@@ -3823,38 +3823,38 @@ const monthLabel = (mk) => {
     year: "numeric",
   });
 };
-const inr = (n) => "₹" + Math.round(n || 0).toLocaleString("en-IN");
-const inrShort = (n) => {
-  n = Number(n) || 0;
-  if (Math.abs(n) >= 1e7) return "₹" + (n / 1e7).toFixed(2) + "Cr";
-  if (Math.abs(n) >= 1e5) return "₹" + (n / 1e5).toFixed(2) + "L";
-  return inr(n);
-};
+// const inr = (n) => "₹" + Math.round(n || 0).toLocaleString("en-IN");
+// const inrShort = (n) => {
+//   n = Number(n) || 0;
+//   if (Math.abs(n) >= 1e7) return "₹" + (n / 1e7).toFixed(2) + "Cr";
+//   if (Math.abs(n) >= 1e5) return "₹" + (n / 1e5).toFixed(2) + "L";
+//   return inr(n);
+// };
 // If your project already has these in a shared UI kit, delete this block and
 // import from there instead — they're only here so this file runs standalone.
-const inputCls =
-  "w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-red-500";
-function Field({ label, children }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium text-zinc-400">{label}</span>
-      {children}
-    </label>
-  );
-}
-function Modal({ title, onClose, children }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-zinc-100">{title}</h3>
-          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300">✕</button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
+// const inputCls =
+//   "w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-red-500";
+// function Field({ label, children }) {
+//   return (
+//     <label className="block">
+//       <span className="mb-1 block text-xs font-medium text-zinc-400">{label}</span>
+//       {children}
+//     </label>
+//   );
+// }
+// function Modal({ title, onClose, children }) {
+//   return (
+//     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+//       <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+//         <div className="mb-3 flex items-center justify-between">
+//           <h3 className="text-sm font-semibold text-zinc-100">{title}</h3>
+//           <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300">✕</button>
+//         </div>
+//         {children}
+//       </div>
+//     </div>
+//   );
+// }
  
 function SalRetView() {
   const [loaded, setLoaded] = useState(false);
