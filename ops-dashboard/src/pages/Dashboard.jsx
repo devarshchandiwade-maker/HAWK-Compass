@@ -88,6 +88,9 @@ import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import UserMenu from "../components/UserMenu";
 import Salretview from "../components/Salretview"
 
+import * as api from "../api/salretApi";
+
+
 /* ------------------------------------------------------------------ */
 /* helpers                                                             */
 /* ------------------------------------------------------------------ */
@@ -3810,611 +3813,372 @@ const [newStage, setNewStage] = useState("");
 /* SALARY-TO-RETAINER                                                  */
 /* ================================================================== */
 
-const SR_DATA = "salret:data"; // legacy single-month (auto-migrated)
-const SR_REV = "salret:revenue"; // legacy overrides (auto-migrated)
-const SR_MONTHS = "salret:months"; // { monthKey: parsedData }
-const SR_REVBY = "salret:revby"; // { monthKey: { brand: overrideRetainer } }
-const SR_PIN = "salret:pin";
 const SR_TARGET = 0.46;
 const pct = (p) => (p == null ? "—" : (p * 100).toFixed(1) + "%");
 const monthLabel = (mk) => {
   const m = /^(\d{4})-(\d{2})$/.exec(mk || "");
   if (!m) return mk || "—";
-  return new Date(Number(m[1]), Number(m[2]) - 1, 1).toLocaleDateString(
-    "en-IN",
-    { month: "short", year: "numeric" },
-  );
+  return new Date(Number(m[1]), Number(m[2]) - 1, 1).toLocaleDateString("en-IN", {
+    month: "short",
+    year: "numeric",
+  });
 };
-
-// Parse the monthly "Sal to Ret" matrix: people x brand-allocation + salary.
-function parseSalRet(wb) {
-  let aoa = null,
-    sheet = "",
-    headerRowIdx = -1;
-  const ordered = [...wb.SheetNames].sort(
-    (a, b) =>
-      (/sal.*ret|ret.*sal/i.test(b) ? 1 : 0) -
-      (/sal.*ret|ret.*sal/i.test(a) ? 1 : 0),
+const inr = (n) => "₹" + Math.round(n || 0).toLocaleString("en-IN");
+const inrShort = (n) => {
+  n = Number(n) || 0;
+  if (Math.abs(n) >= 1e7) return "₹" + (n / 1e7).toFixed(2) + "Cr";
+  if (Math.abs(n) >= 1e5) return "₹" + (n / 1e5).toFixed(2) + "L";
+  return inr(n);
+};
+// If your project already has these in a shared UI kit, delete this block and
+// import from there instead — they're only here so this file runs standalone.
+const inputCls =
+  "w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-red-500";
+function Field({ label, children }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-zinc-400">{label}</span>
+      {children}
+    </label>
   );
-  for (const n of ordered) {
-    const a = XLSX.utils.sheet_to_json(wb.Sheets[n], {
-      header: 1,
-      raw: true,
-      defval: null,
-    });
-    const idx = a.findIndex(
-      (r) => r && r.some((c) => c && norm(String(c)).includes("employeename")),
-    );
-    if (idx >= 0) {
-      aoa = a;
-      sheet = n;
-      headerRowIdx = idx;
-      break;
-    }
-  }
-  if (!aoa) return null;
-
-  const header = aoa[headerRowIdx].map((c) =>
-    c == null ? "" : String(c).trim(),
+}
+function Modal({ title, onClose, children }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-zinc-100">{title}</h3>
+          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300">✕</button>
+        </div>
+        {children}
+      </div>
+    </div>
   );
-  const findCol = (pred) => header.findIndex((h) => pred(norm(h)));
-  const iName = findCol((h) => h.includes("employeename") || h === "name");
-  const iSalary = findCol(
-    (h) => h === "salary" || h.includes("salary") || h.includes("ctc"),
-  );
-  const iBrand = findCol((h) => h === "brand");
-  const iDesig = findCol(
-    (h) => h.includes("designation") || h.includes("role"),
-  );
-  const iTotal = header.findIndex((h) => norm(h) === "total");
-  if (iName < 0 || iSalary < 0) return null;
-
-  const start = iSalary + 1;
-  const end = iTotal > start ? iTotal : header.length;
-  const brandCols = [];
-  for (let c = start; c < end; c++) {
-    const h = header[c];
-    if (h && !/^total$|bandwidth/i.test(h.trim()))
-      brandCols.push({ c, name: h.trim() });
-  }
-  const brands = brandCols.map((b) => b.name);
-
-  const employees = [];
-  let central = 0,
-    sumFull = 0,
-    salRow = null,
-    retRow = null;
-  for (let r = headerRowIdx + 1; r < aoa.length; r++) {
-    const row = aoa[r];
-    if (!row) continue;
-    const labels = row.map((c) => (c != null ? norm(String(c)) : ""));
-    if (labels.includes("totalsalary")) salRow = row;
-    if (labels.includes("totalretainer")) retRow = row;
-    const name = row[iName];
-    if (!name || typeof name !== "string") continue;
-    const nn = norm(name);
-    if (nn === "central") {
-      central = Number(row[iSalary]) || 0;
-      continue;
-    } // Central salaries: overall only, no brand
-    if (nn.startsWith("total") || nn.startsWith("salarytoretainer")) continue;
-    const salary = Number(row[iSalary]) || 0;
-    if (!salary) continue;
-    const alloc = {};
-    for (const bc of brandCols) {
-      const v = Number(row[bc.c]);
-      if (v && v > 0) alloc[bc.name] = v;
-    }
-    sumFull += salary;
-    employees.push({
-      brand: iBrand >= 0 && row[iBrand] ? String(row[iBrand]).trim() : "",
-      name: name.trim(),
-      desig: iDesig >= 0 && row[iDesig] ? String(row[iDesig]).trim() : "",
-      salary,
-      alloc,
-    });
-  }
-
-  const salaryCost = {};
-  brands.forEach((b) => (salaryCost[b] = 0));
-  employees.forEach((e) => {
-    for (const b in e.alloc) salaryCost[b] += e.salary * e.alloc[b];
-  });
-
-  // Authoritative per-brand retainer from the "Total Retainer" row; fall back to detection.
-  let retainer = {};
-  if (retRow)
-    brandCols.forEach((bc) => {
-      const v = Number(retRow[bc.c]);
-      if (v > 0) retainer[bc.name] = v;
-    });
-  if (Object.keys(retainer).length === 0)
-    retainer = detectRevenue(wb, brands, salaryCost, sheet);
-
-  // Grand total salary INCLUDES central + unallocated bandwidth (matches Finance's method).
-  const grandSalary = salRow
-    ? Number(salRow[iSalary]) || sumFull + central
-    : sumFull + central;
-
-  let month = "";
-  const first = aoa[0] && aoa[0][0];
-  if (first instanceof Date) month = first.toISOString().slice(0, 7);
-
-  return {
-    sheet,
-    month,
-    brands,
-    employees,
-    salaryCost,
-    retainer,
-    central,
-    grandSalary,
+}
+ 
+export default function SalRetView() {
+  const [loaded, setLoaded] = useState(false);
+  const [months, setMonths] = useState([]); // [{month_key, grand_salary, total_retainer, overall_pct}]
+  const [detail, setDetail] = useState(null); // GET /api/months/:key result
+  const [selected, setSelected] = useState("");
+  const [hasPin, setHasPin] = useState(false);
+  const [unlocked, setUnlocked] = useState(true);
+  const [pinInput, setPinInput] = useState("");
+  const [pinErr, setPinErr] = useState(false);
+  const [showPinMgr, setShowPinMgr] = useState(false);
+  const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState({});
+  const [note, setNote] = useState("");
+  const [importing, setImporting] = useState(false);
+  const fileRef = useRef();
+ 
+  const refreshMonths = async () => {
+    const list = await api.getMonths();
+    setMonths(list);
+    return list;
   };
-}
-
-// Best-effort: find a brand -> revenue figure elsewhere in the workbook.
-function detectRevenue(wb, brands, salaryCost, matrixSheet) {
-  const lookup = {};
-  brands.forEach((b) => (lookup[norm(b)] = b));
-  const cand = {};
-  for (const n of wb.SheetNames) {
-    if (n === matrixSheet) continue;
-    const a = XLSX.utils.sheet_to_json(wb.Sheets[n], {
-      header: 1,
-      raw: true,
-      defval: null,
-    });
-    for (const row of a) {
-      if (!row) continue;
-      for (let c = 0; c < row.length; c++) {
-        const cell = row[c];
-        if (typeof cell === "string" && lookup[norm(cell)]) {
-          const b = lookup[norm(cell)];
-          for (let k = c + 1; k <= c + 3 && k < row.length; k++) {
-            const v = row[k];
-            if (typeof v === "number" && v > 10000) {
-              (cand[b] = cand[b] || []).push(Math.round(v));
-              break;
-            }
-          }
-        }
+ 
+  // initial load: month list + pin lock status
+  useEffect(() => {
+    (async () => {
+      try {
+        const [list, pinStatus] = await Promise.all([api.getMonths(), api.getPinStatus()]);
+        setMonths(list);
+        setSelected(list.length ? list[list.length - 1].month_key : "");
+        setHasPin(pinStatus.hasPin);
+        setUnlocked(!pinStatus.hasPin);
+      } catch {
+        setNote("Couldn't reach the server. Is the API running?");
+      } finally {
+        setLoaded(true);
       }
+    })();
+  }, []);
+ 
+  // fetch the selected month's detail whenever it changes (and once unlocked)
+  useEffect(() => {
+    if (!selected || !unlocked) return;
+    api.getMonthDetail(selected).then(setDetail).catch(() => setDetail(null));
+  }, [selected, unlocked]);
+ 
+  const onFile = async (file) => {
+    if (!file) return;
+    setImporting(true);
+    try {
+      const result = await api.importMonth(file);
+      await refreshMonths();
+      setSelected(result.monthKey);
+      setNote(`Imported ${monthLabel(result.monthKey)} — ${result.employees} people across ${result.brands} brands.`);
+    } catch (e) {
+      setNote(e.message || "That file couldn't be read.");
+    } finally {
+      setImporting(false);
+      setTimeout(() => setNote(""), 5000);
+      if (fileRef.current) fileRef.current.value = "";
     }
+  };
+ 
+  const updateRev = async (brand, value) => {
+    const v = Number(String(value).replace(/[^0-9.]/g, "")) || 0;
+    // optimistic UI update so the input feels instant
+    setDetail((d) =>
+      d && {
+        ...d,
+        brands: d.brands.map((b) =>
+          b.brand === brand ? { ...b, retainer: v, pct: v > 0 ? b.salaryCost / v : null } : b,
+        ),
+      },
+    );
+    try {
+      await api.setBrandRetainer(selected, brand, v);
+      refreshMonths(); // YTD totals shift too
+    } catch {
+      setNote("Couldn't save that retainer value.");
+    }
+  };
+ 
+  const tryUnlock = async () => {
+    try {
+      const { ok } = await api.verifyPin(pinInput);
+      if (ok) {
+        setUnlocked(true);
+        setPinInput("");
+        setPinErr(false);
+      } else setPinErr(true);
+    } catch {
+      setPinErr(true);
+    }
+  };
+ 
+  const series = months.map((m) => ({
+    key: m.month_key,
+    label: monthLabel(m.month_key),
+    pct: m.overall_pct != null ? +(m.overall_pct * 100).toFixed(1) : null,
+    sal: m.grand_salary,
+    rev: m.total_retainer,
+    overall: m.overall_pct,
+  }));
+  const ytdSal = series.reduce((s, x) => s + (x.overall != null ? x.sal : 0), 0);
+  const ytdRev = series.reduce((s, x) => s + (x.overall != null ? x.rev : 0), 0);
+  const ytdOverall = ytdRev > 0 ? ytdSal / ytdRev : null;
+ 
+  const rows = useMemo(() => {
+    if (!detail) return [];
+    return detail.brands
+      .map((b) => ({ brand: b.brand, sal: b.salaryCost, revenue: b.retainer, pct: b.pct, people: b.people }))
+      .sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
+  }, [detail]);
+ 
+  const withPct = rows.filter((r) => r.pct != null);
+  const avg = withPct.length ? withPct.reduce((s, r) => s + r.pct, 0) / withPct.length : null;
+  const best = withPct.length ? withPct.reduce((a, b) => (b.pct < a.pct ? b : a)) : null;
+  const worst = withPct.length ? withPct.reduce((a, b) => (b.pct > a.pct ? b : a)) : null;
+  const central = detail ? detail.centralSalary || 0 : 0;
+  const currentMonthRow = months.find((m) => m.month_key === selected);
+  const sel = detail
+    ? {
+        sal: detail.grandSalary,
+        rev: detail.brands.reduce((s, b) => s + (b.retainer || 0), 0),
+        overall: currentMonthRow ? currentMonthRow.overall_pct : null,
+      }
+    : { sal: 0, rev: 0, overall: null };
+  const rampups = rows.filter((r) => r.revenue <= 0 && r.sal > 0).length;
+ 
+  const filtered = search.trim()
+    ? rows.filter((r) => r.brand.toLowerCase().includes(search.trim().toLowerCase()))
+    : rows;
+ 
+  const monthKeys = months.map((m) => m.month_key);
+ 
+  /* ---- locked state ---- */
+  if (!loaded) return <div className="py-16 text-center text-sm text-zinc-500">Loading…</div>;
+ 
+  if (hasPin && !unlocked) {
+    return (
+      <div className="mx-auto mt-12 max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 text-center">
+        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800">
+          <Lock size={18} className="text-zinc-300" />
+        </div>
+        <h3 className="text-sm font-semibold text-zinc-100">This section is locked</h3>
+        <p className="mt-1 text-xs text-zinc-500">Salary data is private. Enter your PIN to view.</p>
+        <input
+          type="password"
+          autoFocus
+          value={pinInput}
+          onChange={(e) => {
+            setPinInput(e.target.value);
+            setPinErr(false);
+          }}
+          onKeyDown={(e) => e.key === "Enter" && tryUnlock()}
+          className={`${inputCls} mt-4 text-center tracking-widest`}
+          placeholder="••••"
+        />
+        {pinErr && <p className="mt-2 text-xs text-red-400">Wrong PIN.</p>}
+        <button
+          onClick={tryUnlock}
+          className="mt-3 w-full rounded-md btn-primary px-4 py-2 text-xs font-medium text-white hover:bg-red-500"
+        >
+          Unlock
+        </button>
+      </div>
+    );
   }
-  const revenue = {};
-  brands.forEach((b) => {
-    const cs = cand[b] || [];
-    if (!cs.length) return;
-    const counts = {};
-    cs.forEach((v) => (counts[v] = (counts[v] || 0) + 1));
-    const sal = salaryCost[b] || 0;
-    let best = null,
-      bk = [-1, -1, -1];
-    for (const k in counts) {
-      const v = Number(k);
-      const p = sal && v ? sal / v : 9;
-      const plausible = p >= 0.1 && p <= 1.3 ? 1 : 0;
-      if (
-        counts[v] > bk[0] ||
-        (counts[v] === bk[0] && plausible > bk[1]) ||
-        (counts[v] === bk[0] && plausible === bk[1] && v > bk[2])
-      ) {
-        bk = [counts[v], plausible, v];
-        best = v;
-      }
-    }
-    revenue[b] = best;
-  });
-  return revenue;
+ 
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
+            Salary-to-Retainer{" "}
+            <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-zinc-400">PRIVATE</span>
+          </h2>
+          <p className="text-xs text-zinc-500">
+            {monthKeys.length
+              ? `${monthKeys.length} month${monthKeys.length > 1 ? "s" : ""} tracked toward the 46% goal`
+              : "Import the monthly Finance sheet to begin."}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {monthKeys.length > 0 && (
+            <select
+              value={selected}
+              onChange={(e) => setSelected(e.target.value)}
+              className={inputCls + " w-auto"}
+            >
+              {monthKeys.map((mk) => (
+                <option key={mk} value={mk}>
+                  {monthLabel(mk)}
+                </option>
+              ))}
+            </select>
+          )}
+          <button
+            onClick={() => setShowPinMgr(true)}
+            className="flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+          >
+            {hasPin ? <Lock size={14} /> : <Unlock size={14} />} {hasPin ? "PIN set" : "Set PIN"}
+          </button>
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={importing}
+            className="flex items-center gap-1.5 rounded-md btn-primary px-3 py-2 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
+          >
+            <Upload size={14} /> {importing ? "Importing…" : "Import month"}
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={(e) => onFile(e.target.files?.[0])}
+          />
+        </div>
+      </div>
+ 
+      {note && (
+        <div className="mb-3 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-zinc-300">
+          {note}
+        </div>
+      )}
+ 
+      {!detail ? (
+        <EmptyState
+          icon={Percent}
+          title="No salary data yet"
+          hint="Import your monthly 'Sal to Ret' sheet. Each month is kept, so you can switch between them and watch the year-to-date number track against your 46% target."
+        />
+      ) : (
+        <>
+          <YtdPanel
+            series={series.filter((s) => s.overall != null)}
+            ytdOverall={ytdOverall}
+            ytdSal={ytdSal}
+            ytdRev={ytdRev}
+            selected={selected}
+            onPick={setSelected}
+          />
+ 
+          <div className="mb-2 mt-6 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#7c63ff" }} /> {monthLabel(selected)} · detail
+          </div>
+          <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <Kpi
+              label="Overall Sal/Ret %"
+              value={pct(sel.overall)}
+              sub={`vs 46% target · avg ${pct(avg)}`}
+              accent={sel.overall != null && sel.overall > SR_TARGET}
+            />
+            <Kpi
+              label="Brands tracked"
+              value={String(rows.length)}
+              sub={`${detail.brands.reduce((s, b) => s + b.people.length, 0)} people · ${inrShort(central)} central${rampups ? ` · ${rampups} ramp-up` : ""}`}
+            />
+            <Kpi label="Best brand (lowest)" value={best ? pct(best.pct) : "—"} sub={best ? best.brand : ""} />
+            <Kpi
+              label="Worst brand (highest)"
+              value={worst ? pct(worst.pct) : "—"}
+              sub={worst ? worst.brand : ""}
+              accent={worst != null && worst.pct > SR_TARGET}
+            />
+          </div>
+ 
+          {sel.overall != null && (
+            <Insight overall={sel.overall} totalSal={sel.sal} totalRev={sel.rev} central={central} rows={withPct} />
+          )}
+ 
+          <div className="relative mb-3">
+            <Search size={15} className="pointer-events-none absolute left-3 top-2.5 text-zinc-500" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Filter brands… (e.g. JIO, Tata, ACKO)"
+              className={inputCls + " pl-9"}
+            />
+          </div>
+ 
+          <div className="space-y-2">
+            {filtered.map((r) => (
+              <BrandRow
+                key={r.brand}
+                r={r}
+                expanded={!!expanded[r.brand]}
+                onToggle={() => setExpanded((p) => ({ ...p, [r.brand]: !p[r.brand] }))}
+                onRev={(v) => updateRev(r.brand, v)}
+              />
+            ))}
+            {filtered.length === 0 && (
+              <div className="rounded-lg border border-dashed border-zinc-800 py-8 text-center text-xs text-zinc-500">
+                No brands match "{search}".
+              </div>
+            )}
+          </div>
+        </>
+      )}
+ 
+      {showPinMgr && (
+        <PinManager
+          hasPin={hasPin}
+          onClose={() => setShowPinMgr(false)}
+          onSave={async (p) => {
+            await api.setPin(p);
+            setHasPin(!!p);
+            setUnlocked(true);
+            setShowPinMgr(false);
+          }}
+        />
+      )}
+    </div>
+  );
 }
-
-// function SalRetView() {
-//   const [loaded, setLoaded] = useState(false);
-//   const [months, setMonths] = useState({}); // { monthKey: parsedData }
-//   const [revBy, setRevBy] = useState({}); // { monthKey: { brand: override } }
-//   const [selected, setSelected] = useState("");
-//   const [pin, setPin] = useState("");
-//   const [unlocked, setUnlocked] = useState(false);
-//   const [pinInput, setPinInput] = useState("");
-//   const [pinErr, setPinErr] = useState(false);
-//   const [showPinMgr, setShowPinMgr] = useState(false);
-//   const [search, setSearch] = useState("");
-//   const [expanded, setExpanded] = useState({});
-//   const [note, setNote] = useState("");
-//   const fileRef = useRef();
-
-//   useEffect(() => {
-//     (async () => {
-//       let m = await store.get(SR_MONTHS, null);
-//       let rb = await store.get(SR_REVBY, null);
-//       if (!m) {
-//         // migrate a previously imported single month, if any
-//         const legacy = await store.get(SR_DATA, null);
-//         const legacyRev = await store.get(SR_REV, {});
-//         if (legacy) {
-//           const key = legacy.month || legacy.sheet || "imported";
-//           m = { [key]: legacy };
-//           rb = { [key]: { ...(legacy.retainer || {}), ...legacyRev } };
-//         } else {
-//           m = {};
-//           rb = {};
-//         }
-//         store.set(SR_MONTHS, m);
-//         store.set(SR_REVBY, rb || {});
-//       }
-//       if (!rb) rb = {};
-//       setMonths(m);
-//       setRevBy(rb);
-//       const keys = Object.keys(m).sort();
-//       setSelected(keys[keys.length - 1] || "");
-//       const p = await store.get(SR_PIN, "");
-//       setPin(p);
-//       setUnlocked(!p);
-//       setLoaded(true);
-//     })();
-//   }, []);
-
-//   const onFile = (file) => {
-//     if (!file) return;
-//     const reader = new FileReader();
-//     reader.onload = (e) => {
-//       try {
-//         const wb = XLSX.read(e.target.result, {
-//           type: "array",
-//           cellDates: true,
-//         });
-//         const parsed = parseSalRet(wb);
-//         if (!parsed) {
-//           setNote(
-//             "Couldn't find the Sal-to-Ret matrix. It needs an 'Employee Name' and 'Salary' header with brand columns.",
-//           );
-//           return;
-//         }
-//         const key = parsed.month || parsed.sheet || "import-" + Date.now();
-//         const nextMonths = { ...months, [key]: parsed };
-//         const nextRev = {
-//           ...revBy,
-//           [key]: { ...parsed.retainer, ...(revBy[key] || {}) },
-//         };
-//         setMonths(nextMonths);
-//         store.set(SR_MONTHS, nextMonths);
-//         setRevBy(nextRev);
-//         store.set(SR_REVBY, nextRev);
-//         setSelected(key);
-//         setNote(
-//           `Imported ${monthLabel(key)} — ${parsed.employees.length} people across ${parsed.brands.length} brands.`,
-//         );
-//         setTimeout(() => setNote(""), 5000);
-//       } catch {
-//         setNote("That file couldn't be read.");
-//       }
-//     };
-//     reader.readAsArrayBuffer(file);
-//     if (fileRef.current) fileRef.current.value = "";
-//   };
-
-//   const data = months[selected] || null;
-//   const selRev = revBy[selected] || {};
-
-//   const updateRev = (brand, value) => {
-//     const v = Number(String(value).replace(/[^0-9.]/g, "")) || 0;
-//     const next = { ...revBy, [selected]: { ...selRev, [brand]: v } };
-//     setRevBy(next);
-//     store.set(SR_REVBY, next);
-//   };
-
-//   // totals for any month (used for the year-to-date trend)
-//   const totalsFor = (mk) => {
-//     const m = months[mk];
-//     if (!m) return { sal: 0, rev: 0, overall: null };
-//     const ov = revBy[mk] || {};
-//     const sal = m.grandSalary || 0;
-//     const rev = m.brands.reduce(
-//       (s, b) => s + (Number(ov[b] ?? m.retainer[b]) || 0),
-//       0,
-//     );
-//     return { sal, rev, overall: rev > 0 ? sal / rev : null };
-//   };
-
-//   const monthKeys = Object.keys(months).sort();
-//   const series = monthKeys.map((mk) => {
-//     const t = totalsFor(mk);
-//     return {
-//       key: mk,
-//       label: monthLabel(mk),
-//       pct: t.overall != null ? +(t.overall * 100).toFixed(1) : null,
-//       ...t,
-//     };
-//   });
-//   const ytdSal = series.reduce(
-//     (s, x) => s + (x.overall != null ? x.sal : 0),
-//     0,
-//   );
-//   const ytdRev = series.reduce(
-//     (s, x) => s + (x.overall != null ? x.rev : 0),
-//     0,
-//   );
-//   const ytdOverall = ytdRev > 0 ? ytdSal / ytdRev : null;
-
-//   const rows = useMemo(() => {
-//     if (!data) return [];
-//     return data.brands
-//       .map((b) => {
-//         const sal = data.salaryCost[b] || 0;
-//         const revenue = Number(selRev[b] ?? data.retainer[b]) || 0;
-//         const people = data.employees
-//           .filter((e) => e.alloc[b] > 0)
-//           .map((e) => ({
-//             name: e.name,
-//             desig: e.desig,
-//             salary: e.salary,
-//             alloc: e.alloc[b],
-//             contrib: e.salary * e.alloc[b],
-//           }))
-//           .sort((a, c) => c.contrib - a.contrib);
-//         return {
-//           brand: b,
-//           sal,
-//           revenue,
-//           pct: revenue > 0 ? sal / revenue : null,
-//           people,
-//         };
-//       })
-//       .filter((r) => r.sal > 0 || r.revenue > 0 || r.people.length > 0)
-//       .sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
-//   }, [data, selRev]);
-
-//   const withPct = rows.filter((r) => r.pct != null);
-//   const avg = withPct.length
-//     ? withPct.reduce((s, r) => s + r.pct, 0) / withPct.length
-//     : null;
-//   const best = withPct.length
-//     ? withPct.reduce((a, b) => (b.pct < a.pct ? b : a))
-//     : null;
-//   const worst = withPct.length
-//     ? withPct.reduce((a, b) => (b.pct > a.pct ? b : a))
-//     : null;
-//   const central = data ? data.central || 0 : 0;
-//   const sel = data ? totalsFor(selected) : { sal: 0, rev: 0, overall: null };
-//   const rampups = rows.filter((r) => r.revenue <= 0 && r.sal > 0).length;
-
-//   const filtered = search.trim()
-//     ? rows.filter((r) =>
-//         r.brand.toLowerCase().includes(search.trim().toLowerCase()),
-//       )
-//     : rows;
-
-//   /* ---- locked state ---- */
-//   if (!loaded)
-//     return (
-//       <div className="py-16 text-center text-sm text-zinc-500">Loading…</div>
-//     );
-
-//   if (pin && !unlocked) {
-//     const tryUnlock = () => {
-//       if (pinInput === pin) {
-//         setUnlocked(true);
-//         setPinInput("");
-//         setPinErr(false);
-//       } else setPinErr(true);
-//     };
-//     return (
-//       <div className="mx-auto mt-12 max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 text-center">
-//         <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800">
-//           <Lock size={18} className="text-zinc-300" />
-//         </div>
-//         <h3 className="text-sm font-semibold text-zinc-100">
-//           This section is locked
-//         </h3>
-//         <p className="mt-1 text-xs text-zinc-500">
-//           Salary data is private. Enter your PIN to view.
-//         </p>
-//         <input
-//           type="password"
-//           autoFocus
-//           value={pinInput}
-//           onChange={(e) => {
-//             setPinInput(e.target.value);
-//             setPinErr(false);
-//           }}
-//           onKeyDown={(e) => e.key === "Enter" && tryUnlock()}
-//           className={`${inputCls} mt-4 text-center tracking-widest`}
-//           placeholder="••••"
-//         />
-//         {pinErr && <p className="mt-2 text-xs text-red-400">Wrong PIN.</p>}
-//         <button
-//           onClick={tryUnlock}
-//           className="mt-3 w-full rounded-md btn-primary px-4 py-2 text-xs font-medium text-white hover:bg-red-500"
-//         >
-//           Unlock
-//         </button>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div>
-//       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-//         <div>
-//           <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-//             Salary-to-Retainer{" "}
-//             <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-zinc-400">
-//               PRIVATE
-//             </span>
-//           </h2>
-//           <p className="text-xs text-zinc-500">
-//             {monthKeys.length
-//               ? `${monthKeys.length} month${monthKeys.length > 1 ? "s" : ""} tracked toward the 46% goal`
-//               : "Import the monthly Finance sheet to begin."}
-//           </p>
-//         </div>
-//         <div className="flex flex-wrap gap-2">
-//           {monthKeys.length > 0 && (
-//             <select
-//               value={selected}
-//               onChange={(e) => setSelected(e.target.value)}
-//               className={inputCls + " w-auto"}
-//             >
-//               {monthKeys.map((mk) => (
-//                 <option key={mk} value={mk}>
-//                   {monthLabel(mk)}
-//                 </option>
-//               ))}
-//             </select>
-//           )}
-//           <button
-//             onClick={() => setShowPinMgr(true)}
-//             className="flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
-//           >
-//             {pin ? <Lock size={14} /> : <Unlock size={14} />}{" "}
-//             {pin ? "PIN set" : "Set PIN"}
-//           </button>
-//           <button
-//             onClick={() => fileRef.current?.click()}
-//             className="flex items-center gap-1.5 rounded-md btn-primary px-3 py-2 text-xs font-medium text-white hover:bg-red-500"
-//           >
-//             <Upload size={14} /> Import month
-//           </button>
-//           <input
-//             ref={fileRef}
-//             type="file"
-//             accept=".xlsx,.xls"
-//             className="hidden"
-//             onChange={(e) => onFile(e.target.files?.[0])}
-//           />
-//         </div>
-//       </div>
-
-//       {note && (
-//         <div className="mb-3 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-zinc-300">
-//           {note}
-//         </div>
-//       )}
-
-//       {!data ? (
-//         <EmptyState
-//           icon={Percent}
-//           title="No salary data yet"
-//           hint="Import your monthly 'Sal to Ret' sheet. Each month is kept, so you can switch between them and watch the year-to-date number track against your 46% target."
-//         />
-//       ) : (
-//         <>
-//           {/* year to date */}
-//           <YtdPanel
-//             series={series.filter((s) => s.overall != null)}
-//             ytdOverall={ytdOverall}
-//             ytdSal={ytdSal}
-//             ytdRev={ytdRev}
-//             selected={selected}
-//             onPick={setSelected}
-//           />
-
-//           {/* selected month */}
-//           <div className="mb-2 mt-6 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
-//             <span
-//               className="h-1.5 w-1.5 rounded-full"
-//               style={{ background: "#7c63ff" }}
-//             />{" "}
-//             {monthLabel(selected)} · detail
-//           </div>
-//           <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-//             <Kpi
-//               label="Overall Sal/Ret %"
-//               value={pct(sel.overall)}
-//               sub={`vs 46% target · avg ${pct(avg)}`}
-//               accent={sel.overall != null && sel.overall > SR_TARGET}
-//             />
-//             <Kpi
-//               label="Brands tracked"
-//               value={String(rows.length)}
-//               sub={`${data.employees.length} people · ${inrShort(central)} central${rampups ? ` · ${rampups} ramp-up` : ""}`}
-//             />
-//             <Kpi
-//               label="Best brand (lowest)"
-//               value={best ? pct(best.pct) : "—"}
-//               sub={best ? best.brand : ""}
-//             />
-//             <Kpi
-//               label="Worst brand (highest)"
-//               value={worst ? pct(worst.pct) : "—"}
-//               sub={worst ? worst.brand : ""}
-//               accent={worst != null && worst.pct > SR_TARGET}
-//             />
-//           </div>
-
-//           {sel.overall != null && (
-//             <Insight
-//               overall={sel.overall}
-//               totalSal={sel.sal}
-//               totalRev={sel.rev}
-//               central={central}
-//               rows={withPct}
-//             />
-//           )}
-
-//           <div className="relative mb-3">
-//             <Search
-//               size={15}
-//               className="pointer-events-none absolute left-3 top-2.5 text-zinc-500"
-//             />
-//             <input
-//               value={search}
-//               onChange={(e) => setSearch(e.target.value)}
-//               placeholder="Filter brands… (e.g. JIO, Tata, ACKO)"
-//               className={inputCls + " pl-9"}
-//             />
-//           </div>
-
-//           <div className="space-y-2">
-//             {filtered.map((r) => (
-//               <BrandRow
-//                 key={r.brand}
-//                 r={r}
-//                 expanded={!!expanded[r.brand]}
-//                 onToggle={() =>
-//                   setExpanded((p) => ({ ...p, [r.brand]: !p[r.brand] }))
-//                 }
-//                 onRev={(v) => updateRev(r.brand, v)}
-//               />
-//             ))}
-//             {filtered.length === 0 && (
-//               <div className="rounded-lg border border-dashed border-zinc-800 py-8 text-center text-xs text-zinc-500">
-//                 No brands match "{search}".
-//               </div>
-//             )}
-//           </div>
-//         </>
-//       )}
-
-//       {showPinMgr && (
-//         <PinManager
-//           current={pin}
-//           onClose={() => setShowPinMgr(false)}
-//           onSave={(p) => {
-//             setPin(p);
-//             store.set(SR_PIN, p);
-//             setUnlocked(true);
-//             setShowPinMgr(false);
-//           }}
-//         />
-//       )}
-//     </div>
-//   );
-// }
-
-function SalRetView(){
-  return <Salretview />
-}
-
+ 
 function YtdPanel({ series, ytdOverall, ytdSal, ytdRev, selected, onPick }) {
   const over = ytdOverall != null && ytdOverall > SR_TARGET;
   const latest = series.length ? series[series.length - 1] : null;
   const prev = series.length > 1 ? series[series.length - 2] : null;
   const delta = latest && prev ? latest.pct - prev.pct : null;
-
+ 
   return (
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-      {/* YTD headline */}
       <div
         className="relative overflow-hidden rounded-2xl border p-5"
         style={{
@@ -4427,9 +4191,7 @@ function YtdPanel({ series, ytdOverall, ytdSal, ytdRev, selected, onPick }) {
         <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-zinc-400">
           <Target size={14} /> Goal till now (YTD)
         </div>
-        <div
-          className={`mt-2 text-[40px] font-semibold leading-none tracking-tight ${over ? "text-amber-200" : "text-emerald-200"}`}
-        >
+        <div className={`mt-2 text-[40px] font-semibold leading-none tracking-tight ${over ? "text-amber-200" : "text-emerald-200"}`}>
           {pct(ytdOverall)}
         </div>
         <div className="mt-2 text-xs text-zinc-400">
@@ -4438,21 +4200,16 @@ function YtdPanel({ series, ytdOverall, ytdSal, ytdRev, selected, onPick }) {
             : `${((SR_TARGET - ytdOverall) * 100).toFixed(1)} pts under the 46% target`}
         </div>
         <div className="mt-3 border-t border-zinc-800 pt-3 text-[11px] text-zinc-500">
-          {series.length} month{series.length > 1 ? "s" : ""} · salaries{" "}
-          {inrShort(ytdSal)} ÷ retainers {inrShort(ytdRev)}
+          {series.length} month{series.length > 1 ? "s" : ""} · salaries {inrShort(ytdSal)} ÷ retainers {inrShort(ytdRev)}
           {delta != null && (
-            <span
-              className={delta <= 0 ? "text-emerald-400" : "text-amber-400"}
-            >
+            <span className={delta <= 0 ? "text-emerald-400" : "text-amber-400"}>
               {"  ·  "}
-              {delta <= 0 ? "▼" : "▲"} {Math.abs(delta).toFixed(1)} pts vs prev
-              month
+              {delta <= 0 ? "▼" : "▲"} {Math.abs(delta).toFixed(1)} pts vs prev month
             </span>
           )}
         </div>
       </div>
-
-      {/* trend */}
+ 
       <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 lg:col-span-2">
         <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
           Monthly overall % vs target
@@ -4462,20 +4219,9 @@ function YtdPanel({ series, ytdOverall, ytdSal, ytdRev, selected, onPick }) {
             <LineChart
               data={series}
               margin={{ top: 10, right: 14, bottom: 6, left: -18 }}
-              onClick={(e) =>
-                e?.activeLabel &&
-                onPick(
-                  series.find((s) => s.label === e.activeLabel)?.key ||
-                    selected,
-                )
-              }
+              onClick={(e) => e?.activeLabel && onPick(series.find((s) => s.label === e.activeLabel)?.key || selected)}
             >
-              <XAxis
-                dataKey="label"
-                tick={{ fill: "#a1a1aa", fontSize: 11 }}
-                axisLine={{ stroke: "#3f3f46" }}
-                tickLine={false}
-              />
+              <XAxis dataKey="label" tick={{ fill: "#a1a1aa", fontSize: 11 }} axisLine={{ stroke: "#3f3f46" }} tickLine={false} />
               <YAxis
                 tick={{ fill: "#a1a1aa", fontSize: 11 }}
                 axisLine={false}
@@ -4485,99 +4231,61 @@ function YtdPanel({ series, ytdOverall, ytdSal, ytdRev, selected, onPick }) {
               />
               <Tooltip
                 cursor={{ stroke: "#3f3f46" }}
-                contentStyle={{
-                  background: "#18181b",
-                  border: "1px solid #3f3f46",
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
+                contentStyle={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 8, fontSize: 12 }}
                 formatter={(v) => [v + "%", "Overall"]}
               />
               <ReferenceLine
                 y={46}
                 stroke="#10b981"
                 strokeDasharray="5 4"
-                label={{
-                  value: "46% target",
-                  fill: "#10b981",
-                  fontSize: 10,
-                  position: "insideTopRight",
-                }}
+                label={{ value: "46% target", fill: "#10b981", fontSize: 10, position: "insideTopRight" }}
               />
-              <Line
-                type="monotone"
-                dataKey="pct"
-                stroke="#7c63ff"
-                strokeWidth={2.5}
-                dot={{ r: 3.5, fill: "#7c63ff", strokeWidth: 0 }}
-                activeDot={{ r: 5 }}
-              />
+              <Line type="monotone" dataKey="pct" stroke="#7c63ff" strokeWidth={2.5} dot={{ r: 3.5, fill: "#7c63ff", strokeWidth: 0 }} activeDot={{ r: 5 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
         {series.length > 1 && (
-          <div className="mt-1 text-center text-[10px] text-zinc-600">
-            Tip: click a point to open that month below.
-          </div>
+          <div className="mt-1 text-center text-[10px] text-zinc-600">Tip: click a point to open that month below.</div>
         )}
       </div>
     </div>
   );
 }
-
+ 
 function Insight({ overall, totalSal, totalRev, central, rows }) {
   const over = overall > SR_TARGET;
   const dpts = Math.abs(overall - SR_TARGET) * 100;
-  const buffer = SR_TARGET * totalRev - totalSal; // +ve when under target
+  const buffer = SR_TARGET * totalRev - totalSal;
   const needRev = totalSal / SR_TARGET - totalRev;
   const cutSal = totalSal - SR_TARGET * totalRev;
   const drags = [...rows]
     .filter((r) => r.pct > SR_TARGET)
     .sort((a, b) => b.sal * (b.pct - SR_TARGET) - a.sal * (a.pct - SR_TARGET))
     .slice(0, 3);
-
+ 
   return (
-    <div
-      className={`mb-5 rounded-xl border p-4 ${over ? "border-amber-500/40 bg-amber-500/[0.04]" : "border-emerald-500/40 bg-emerald-500/[0.04]"}`}
-    >
+    <div className={`mb-5 rounded-xl border p-4 ${over ? "border-amber-500/40 bg-amber-500/[0.04]" : "border-emerald-500/40 bg-emerald-500/[0.04]"}`}>
       <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-zinc-400">
         <Target size={14} /> Insight · target 46% overall by 31 Mar 2027
       </div>
       <p className="mt-2 text-sm text-zinc-200">
-        You're at{" "}
-        <span
-          className={`font-semibold ${over ? "text-amber-300" : "text-emerald-300"}`}
-        >
-          {pct(overall)}
-        </span>{" "}
-        overall, {dpts.toFixed(1)} pts {over ? "above" : "under"} the 46%
-        target.{" "}
+        You're at <span className={`font-semibold ${over ? "text-amber-300" : "text-emerald-300"}`}>{pct(overall)}</span> overall,{" "}
+        {dpts.toFixed(1)} pts {over ? "above" : "under"} the 46% target.{" "}
         {over ? (
           <>
-            To get back to 46% you'd need roughly{" "}
-            <span className="font-medium text-zinc-100">
-              {inrShort(needRev)}
-            </span>{" "}
-            more monthly retainer, or{" "}
-            <span className="font-medium text-zinc-100">
-              {inrShort(cutSal)}
-            </span>{" "}
-            less monthly salary cost.
+            To get back to 46% you'd need roughly <span className="font-medium text-zinc-100">{inrShort(needRev)}</span> more monthly
+            retainer, or <span className="font-medium text-zinc-100">{inrShort(cutSal)}</span> less monthly salary cost.
           </>
         ) : (
           <>
-            You have about{" "}
-            <span className="font-medium text-zinc-100">
-              {inrShort(buffer)}
-            </span>{" "}
-            of monthly salary headroom before you cross 46%.
+            You have about <span className="font-medium text-zinc-100">{inrShort(buffer)}</span> of monthly salary headroom before
+            you cross 46%.
           </>
         )}
       </p>
       <p className="mt-2 text-xs text-zinc-500">
-        Total salaries {inrShort(totalSal)} (incl. {inrShort(central)} central)
-        ÷ retainers {inrShort(totalRev)}. Central and ramp-up salaries count
-        here even though they sit outside the per-brand percentages.
+        Total salaries {inrShort(totalSal)} (incl. {inrShort(central)} central) ÷ retainers {inrShort(totalRev)}. Central and
+        ramp-up salaries count here even though they sit outside the per-brand percentages.
       </p>
       {over && drags.length > 0 && (
         <p className="mt-2 text-xs text-zinc-400">
@@ -4588,14 +4296,13 @@ function Insight({ overall, totalSal, totalRev, central, rows }) {
               <span className="text-zinc-200">{d.brand}</span> ({pct(d.pct)})
             </span>
           ))}
-          . Fixing these moves the overall number most, since they combine a
-          high % with a large salary base.
+          . Fixing these moves the overall number most, since they combine a high % with a large salary base.
         </p>
       )}
     </div>
   );
 }
-
+ 
 function BrandRow({ r, expanded, onToggle, onRev }) {
   const rampup = r.revenue <= 0 && r.sal > 0;
   const band = rampup
@@ -4610,14 +4317,8 @@ function BrandRow({ r, expanded, onToggle, onRev }) {
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/40">
       <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-        <button
-          onClick={onToggle}
-          className="flex flex-1 items-center gap-2 text-left"
-        >
-          <ChevronDown
-            size={15}
-            className={`text-zinc-500 transition ${expanded ? "rotate-180" : ""}`}
-          />
+        <button onClick={onToggle} className="flex flex-1 items-center gap-2 text-left">
+          <ChevronDown size={15} className={`text-zinc-500 transition ${expanded ? "rotate-180" : ""}`} />
           <span className="font-medium text-zinc-100">{r.brand}</span>
           <span className="flex items-center gap-1 text-[11px] text-zinc-500">
             <Users size={11} />
@@ -4625,17 +4326,11 @@ function BrandRow({ r, expanded, onToggle, onRev }) {
           </span>
         </button>
         <div className="text-right">
-          <div className="text-[10px] uppercase tracking-wider text-zinc-600">
-            Salary / mo
-          </div>
-          <div className="font-mono text-sm text-zinc-200">
-            {inr(Math.round(r.sal))}
-          </div>
+          <div className="text-[10px] uppercase tracking-wider text-zinc-600">Salary / mo</div>
+          <div className="font-mono text-sm text-zinc-200">{inr(Math.round(r.sal))}</div>
         </div>
         <div className="text-right">
-          <div className="text-[10px] uppercase tracking-wider text-zinc-600">
-            Retainer / mo
-          </div>
+          <div className="text-[10px] uppercase tracking-wider text-zinc-600">Retainer / mo</div>
           <input
             value={r.revenue || ""}
             onChange={(e) => onRev(e.target.value)}
@@ -4644,23 +4339,17 @@ function BrandRow({ r, expanded, onToggle, onRev }) {
           />
         </div>
         <span
-          title={
-            rampup
-              ? "Salary with no retainer yet — counted in the overall total, not in the brand %"
-              : ""
-          }
+          title={rampup ? "Salary with no retainer yet — counted in the overall total, not in the brand %" : ""}
           className={`rounded-full px-2.5 py-1 text-xs font-semibold ${band}`}
         >
           {rampup ? "Ramp-up" : pct(r.pct)}
         </span>
       </div>
-
+ 
       {expanded && (
         <div className="border-t border-zinc-800 bg-zinc-950/50">
           {r.people.length === 0 ? (
-            <div className="px-4 py-3 text-xs text-zinc-500">
-              No one is allocated to this brand in the sheet.
-            </div>
+            <div className="px-4 py-3 text-xs text-zinc-500">No one is allocated to this brand in the sheet.</div>
           ) : (
             <table className="w-full text-xs">
               <thead className="text-left text-[10px] uppercase tracking-wider text-zinc-600">
@@ -4668,30 +4357,18 @@ function BrandRow({ r, expanded, onToggle, onRev }) {
                   <th className="px-4 py-2 font-medium">Person</th>
                   <th className="px-4 py-2 font-medium">Designation</th>
                   <th className="px-4 py-2 text-right font-medium">Salary</th>
-                  <th className="px-4 py-2 text-right font-medium">
-                    % on brand
-                  </th>
-                  <th className="px-4 py-2 text-right font-medium">
-                    Cost to brand
-                  </th>
+                  <th className="px-4 py-2 text-right font-medium">% on brand</th>
+                  <th className="px-4 py-2 text-right font-medium">Cost to brand</th>
                 </tr>
               </thead>
               <tbody>
                 {r.people.map((p, i) => (
                   <tr key={i} className="border-t border-zinc-800/60">
                     <td className="px-4 py-2 text-zinc-200">{p.name}</td>
-                    <td className="px-4 py-2 text-zinc-500">
-                      {p.desig || "—"}
-                    </td>
-                    <td className="px-4 py-2 text-right font-mono text-zinc-400">
-                      {inr(p.salary)}
-                    </td>
-                    <td className="px-4 py-2 text-right text-zinc-300">
-                      {Math.round(p.alloc * 100)}%
-                    </td>
-                    <td className="px-4 py-2 text-right font-mono text-zinc-200">
-                      {inr(Math.round(p.contrib))}
-                    </td>
+                    <td className="px-4 py-2 text-zinc-500">{p.designation || "—"}</td>
+                    <td className="px-4 py-2 text-right font-mono text-zinc-400">{inr(p.salary)}</td>
+                    <td className="px-4 py-2 text-right text-zinc-300">{Math.round(p.alloc * 100)}%</td>
+                    <td className="px-4 py-2 text-right font-mono text-zinc-200">{inr(Math.round(p.contrib))}</td>
                   </tr>
                 ))}
               </tbody>
@@ -4702,8 +4379,8 @@ function BrandRow({ r, expanded, onToggle, onRev }) {
     </div>
   );
 }
-
-function PinManager({ current, onClose, onSave }) {
+ 
+function PinManager({ hasPin, onClose, onSave }) {
   const [a, setA] = useState("");
   const [b, setB] = useState("");
   const [err, setErr] = useState("");
@@ -4713,12 +4390,10 @@ function PinManager({ current, onClose, onSave }) {
     onSave(a);
   };
   return (
-    <Modal title={current ? "Change PIN" : "Set a PIN"} onClose={onClose}>
+    <Modal title={hasPin ? "Change PIN" : "Set a PIN"} onClose={onClose}>
       <div className="space-y-3">
         <p className="text-xs text-zinc-500">
-          A light lock to keep this tab private on a shared screen. It isn't
-          bank-grade security, and this section's data is already stored only to
-          your login.
+          A light lock to keep this tab private on a shared screen. It isn't bank-grade security.
         </p>
         <Field label="New PIN">
           <input
@@ -4745,27 +4420,18 @@ function PinManager({ current, onClose, onSave }) {
         </Field>
         {err && <p className="text-xs text-red-400">{err}</p>}
         <div className="flex justify-between gap-2 pt-1">
-          {current ? (
-            <button
-              onClick={() => onSave("")}
-              className="rounded-md px-3 py-2 text-xs text-zinc-500 hover:text-red-300"
-            >
+          {hasPin ? (
+            <button onClick={() => onSave("")} className="rounded-md px-3 py-2 text-xs text-zinc-500 hover:text-red-300">
               Remove lock
             </button>
           ) : (
             <span />
           )}
           <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              className="rounded-md px-3 py-2 text-xs text-zinc-400 hover:text-zinc-200"
-            >
+            <button onClick={onClose} className="rounded-md px-3 py-2 text-xs text-zinc-400 hover:text-zinc-200">
               Cancel
             </button>
-            <button
-              onClick={submit}
-              className="rounded-md btn-primary px-4 py-2 text-xs font-medium text-white hover:bg-red-500"
-            >
+            <button onClick={submit} className="rounded-md btn-primary px-4 py-2 text-xs font-medium text-white hover:bg-red-500">
               Save PIN
             </button>
           </div>
@@ -4774,66 +4440,38 @@ function PinManager({ current, onClose, onSave }) {
     </Modal>
   );
 }
-
-/* ------------------------------------------------------------------ */
-/* shared small components                                             */
-/* ------------------------------------------------------------------ */
-
+ 
 function Kpi({ label, value, sub, accent }) {
   return (
     <div
       className="group relative overflow-hidden rounded-2xl border p-4 transition duration-200 hover:-translate-y-0.5"
       style={
         accent
-          ? {
-              borderColor: "rgba(245,158,11,.4)",
-              background:
-                "linear-gradient(165deg, rgba(245,158,11,.08), rgba(24,24,27,.5))",
-            }
+          ? { borderColor: "rgba(245,158,11,.4)", background: "linear-gradient(165deg, rgba(245,158,11,.08), rgba(24,24,27,.5))" }
           : { borderColor: "#27272a", background: "rgba(24,24,27,.5)" }
       }
     >
       {accent && (
         <div
           className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full blur-2xl"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(245,158,11,.30), transparent 70%)",
-          }}
+          style={{ background: "radial-gradient(circle, rgba(245,158,11,.30), transparent 70%)" }}
         />
       )}
-      <div className="relative text-[11px] font-medium uppercase tracking-wider text-zinc-500">
-        {label}
-      </div>
-      <div
-        className={`relative mt-2 text-[27px] font-semibold leading-none tracking-tight ${accent ? "text-amber-200" : "text-zinc-50"}`}
-      >
+      <div className="relative text-[11px] font-medium uppercase tracking-wider text-zinc-500">{label}</div>
+      <div className={`relative mt-2 text-[27px] font-semibold leading-none tracking-tight ${accent ? "text-amber-200" : "text-zinc-50"}`}>
         {value}
       </div>
-      {sub && (
-        <div className="relative mt-2 text-[11px] text-zinc-500">{sub}</div>
-      )}
+      {sub && <div className="relative mt-2 text-[11px] text-zinc-500">{sub}</div>}
     </div>
   );
 }
-
-function Pill({ children, cls }) {
-  return (
-    <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${cls}`}>
-      {children}
-    </span>
-  );
-}
-
+ 
 function EmptyState({ icon: Icon, title, hint }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-800 py-16 text-center">
       <div
         className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-zinc-800"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(124,99,255,.14), transparent 70%)",
-        }}
+        style={{ background: "radial-gradient(circle, rgba(124,99,255,.14), transparent 70%)" }}
       >
         <Icon size={22} className="text-zinc-400" />
       </div>
@@ -4841,81 +4479,4 @@ function EmptyState({ icon: Icon, title, hint }) {
       <p className="mt-1 max-w-sm text-xs text-zinc-500">{hint}</p>
     </div>
   );
-}
-
-/* ------------------------------------------------------------------ */
-/* date normaliser for Excel imports                                  */
-/* ------------------------------------------------------------------ */
-
-const MONTHS = {
-  jan: 1,
-  feb: 2,
-  mar: 3,
-  apr: 4,
-  may: 5,
-  jun: 6,
-  jul: 7,
-  aug: 8,
-  sep: 9,
-  oct: 10,
-  nov: 11,
-  dec: 12,
-};
-
-function normDate(v) {
-  if (v === null || v === undefined || v === "") return "";
-  const pad = (n) => String(n).padStart(2, "0");
-  const iso = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
-  const fromDate = (d) =>
-    isNaN(d) ? "" : iso(d.getFullYear(), d.getMonth() + 1, d.getDate());
-  const fixYear = (y) => {
-    y = Number(y);
-    return y < 100 ? 2000 + y : y;
-  };
-  const serial = (n) => fromDate(new Date(Math.round((n - 25569) * 86400000)));
-  const mo = (name) => MONTHS[name.slice(0, 3).toLowerCase()];
-
-  if (v instanceof Date) return fromDate(v);
-  if (typeof v === "number") return v > 20000 && v < 90000 ? serial(v) : "";
-
-  let s = String(v).trim();
-  if (!s) return "";
-  if (/^\d{4,6}$/.test(s)) {
-    const n = Number(s);
-    if (n > 20000 && n < 90000) return serial(n);
-  }
-
-  // normalise: drop ordinal suffixes (31st), commas -> space, collapse spaces
-  s = s
-    .replace(/(\d)(st|nd|rd|th)\b/gi, "$1")
-    .replace(/,/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  let m;
-  // ISO yyyy-mm-dd
-  if ((m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/)))
-    return iso(m[1], m[2], m[3]);
-  // dd-mm-yyyy (day-first, Indian convention)
-  if ((m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/)))
-    return iso(fixYear(m[3]), m[2], m[1]);
-  // dd MMM yyyy  (31 Mar 2026 / 31-Mar-26)
-  if (
-    (m = s.match(/^(\d{1,2})[ \-/]([A-Za-z]{3,})[ \-/]?(\d{2,4})$/)) &&
-    mo(m[2])
-  )
-    return iso(fixYear(m[3]), mo(m[2]), m[1]);
-  // MMM dd yyyy  (Mar 31 2026)
-  if (
-    (m = s.match(/^([A-Za-z]{3,})[ \-/](\d{1,2})[ \-/](\d{2,4})$/)) &&
-    mo(m[1])
-  )
-    return iso(fixYear(m[3]), mo(m[1]), m[2]);
-  // MMM yyyy  (Mar 2026) -> last day of month
-  if ((m = s.match(/^([A-Za-z]{3,})[ \-/]?(\d{2,4})$/)) && mo(m[1])) {
-    const mm = mo(m[1]);
-    const yy = fixYear(m[2]);
-    return iso(yy, mm, new Date(yy, mm, 0).getDate());
-  }
-  return fromDate(new Date(s));
 }
