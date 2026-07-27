@@ -3277,14 +3277,13 @@ const CustomTooltip = ({ active, payload }) => {
         <span>{d.pitchNotDone}</span>
       </div>
 
-      <div className="mt-2 border-t border-zinc-700 pt-2 flex justify-between gap-10">
+      {/* <div className="mt-2 border-t border-zinc-700 pt-2 flex justify-between gap-10">
         <span>Revenue</span>
         <span>{inr(d.revenue)}</span>
-      </div>
+      </div> */}
     </div>
   );
 };
-
 
   const data = monthNames.map((month) => ({
   month,
@@ -3324,24 +3323,14 @@ const CustomTooltip = ({ active, payload }) => {
               axisLine={false}
               tickLine={false}
             />
-            {/* <Tooltip
-              cursor={{ stroke: "#3f3f46", strokeWidth: 1 }}
-              contentStyle={{
-                backgroundColor: "#18181b",
-                border: "1px solid #3f3f46",
-                borderRadius: 8,
-                fontSize: 12,
-              }}
-              labelStyle={{ color: "#e4e4e7", marginBottom: 4 }}
-              formatter={(value, name) =>
-                name === "count" ? [value, "Leads"] : [inr(value), "Revenue"]
-              }
-            /> */}
             <Tooltip content={<CustomTooltip />} />
             <Line
-              dataKey="totalLeads"
+              type="monotone"
+              dataKey="count"
               stroke="#ef4444"
               strokeWidth={2.5}
+              dot={{ fill: "#ef4444", r: 3.5, strokeWidth: 0 }}
+              activeDot={{ r: 5 }}
             />
           </LineChart>
         </ResponsiveContainer>
