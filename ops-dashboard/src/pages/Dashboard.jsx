@@ -3409,6 +3409,8 @@ const defaultLeadStages = [
 ];
 
 const [leadStages, setLeadStages] = useState(defaultLeadStages);
+const [showStageModal, setShowStageModal] = useState(false);
+const [newStage, setNewStage] = useState("");
 
 
 
@@ -3496,38 +3498,26 @@ const [leadStages, setLeadStages] = useState(defaultLeadStages);
             <Field label="Lead Stage">
               <div className="flex gap-2">
                 <select
-                  className={`${inputCls} flex-1`}
-                  value={f.lead_stage}
-                  onChange={(e) => {
-                    if (e.target.value === "__add__") {
-                      const stage = prompt("Enter new Lead Stage");
+  className={inputCls}
+  value={f.lead_stage}
+  onChange={(e) => {
+    if (e.target.value === "__add__") {
+      setShowStageModal(true);
+    } else {
+      set("lead_stage", e.target.value);
+    }
+  }}
+>
+  <option value="">Select Stage</option>
 
-                      if (
-                        stage &&
-                        !leadStages.some(
-                          (s) => s.toLowerCase() === stage.toLowerCase()
-                        )
-                      ) {
-                        setLeadStages((prev) => [...prev, stage]);
-                        set("lead_stage", stage);
-                      }
-                    } else {
-                      set("lead_stage", e.target.value);
-                    }
-                  }}
-                >
-                  <option value="">Select Stage</option>
+  {leadStages.map((stage) => (
+    <option key={stage} value={stage}>
+      {stage}
+    </option>
+  ))}
 
-                  {leadStages.map((stage) => (
-                    <option key={stage} value={stage}>
-                      {stage}
-                    </option>
-                  ))}
-
-                  <option value="__add__">
-                    <Plus size={14} /> Add New Stage
-                  </option>
-                </select>
+  <option value="__add__">+ Add New Stage</option>
+</select>
               </div>
             </Field>
 
@@ -3737,6 +3727,80 @@ const [leadStages, setLeadStages] = useState(defaultLeadStages);
           </button>
         </div>
       </div>
+
+      {showStageModal && (
+  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl">
+      <h3 className="text-lg font-semibold text-white">
+        Add Lead Stage
+      </h3>
+
+      <p className="mt-1 text-sm text-zinc-400">
+        Create a custom lead stage.
+      </p>
+
+      <input
+        autoFocus
+        value={newStage}
+        onChange={(e) => setNewStage(e.target.value)}
+        placeholder="e.g. Waiting for Approval"
+        className={`${inputCls} mt-4`}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            if (
+              newStage.trim() &&
+              !leadStages.some(
+                (s) =>
+                  s.toLowerCase() ===
+                  newStage.trim().toLowerCase()
+              )
+            ) {
+              setLeadStages([...leadStages, newStage.trim()]);
+              set("lead_stage", newStage.trim());
+            }
+
+            setNewStage("");
+            setShowStageModal(false);
+          }
+        }}
+      />
+
+      <div className="mt-6 flex justify-end gap-2">
+        <button
+          onClick={() => {
+            setNewStage("");
+            setShowStageModal(false);
+          }}
+          className="rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={() => {
+            if (
+              newStage.trim() &&
+              !leadStages.some(
+                (s) =>
+                  s.toLowerCase() ===
+                  newStage.trim().toLowerCase()
+              )
+            ) {
+              setLeadStages([...leadStages, newStage.trim()]);
+              set("lead_stage", newStage.trim());
+            }
+
+            setNewStage("");
+            setShowStageModal(false);
+          }}
+          className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
+        >
+          Add Stage
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </Modal>
   );
 }
