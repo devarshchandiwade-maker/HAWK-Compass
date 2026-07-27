@@ -318,7 +318,7 @@ textarea{
 ================================== */
 
 input[type="date"]{
-    color-scheme:dark;
+    color-scheme:light;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator{
