@@ -1,10 +1,4 @@
-// controllers/aiInsightController.js
-
-const { GoogleGenAI } = require("@google/genai");
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+const axios = require("axios");
 
 exports.salaryInsight = async (req, res) => {
   try {
@@ -24,7 +18,7 @@ Analyze this Salary vs Retainer data.
 
 Target Salary %: ${target}%
 
-Overall Salary %: ${(overall * 100).toFixed(2)}%
+Overall Salary %: ${((overall || 0) * 100).toFixed(2)}%
 
 Total Monthly Salary:
 ₹${totalSal}
@@ -38,48 +32,65 @@ Central Cost:
 Brand Data:
 ${JSON.stringify(rows, null, 2)}
 
-Return ONLY JSON.
-
-Format:
+Return ONLY valid JSON.
 
 {
   "headline":"",
   "summary":"",
   "risk":"",
   "recommendations":[
-      "...",
-      "...",
-      "..."
+    "...",
+    "...",
+    "..."
   ],
   "biggest_drags":[
-      "...",
-      "..."
+    "...",
+    "..."
   ]
 }
 
-Rules:
-
-- Mention whether target is achieved.
-- Mention how much extra revenue OR salary reduction is required.
-- Mention highest salary % brands.
-- Give practical recommendations.
-- Keep summary under 80 words.
+Do not wrap the JSON in markdown.
 `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    let text = response.text;
+    let text =
+      response.data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+    text = text
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
 
-    res.json(JSON.parse(text));
+    const json = JSON.parse(text);
+
+    res.json(json);
   } catch (err) {
-    console.log(err);
+    console.error(
+      err.response?.data || err.message || err
+    );
+
     res.status(500).json({
       message: "Failed to generate AI insight",
+      error: err.response?.data || err.message,
     });
   }
 };
