@@ -3277,10 +3277,10 @@ const CustomTooltip = ({ active, payload }) => {
         <span>{d.pitchNotDone}</span>
       </div>
 
-      <div className="mt-2 border-t border-zinc-700 pt-2 flex justify-between gap-10">
+      {/* <div className="mt-2 border-t border-zinc-700 pt-2 flex justify-between gap-10">
         <span>Revenue</span>
         <span>{inr(d.revenue)}</span>
-      </div>
+      </div> */}
     </div>
   );
 };
@@ -3326,7 +3326,7 @@ const CustomTooltip = ({ active, payload }) => {
             <Tooltip content={<CustomTooltip />} />
             <Line
               type="monotone"
-              dataKey="count"
+              dataKey="totalLeads"
               stroke="#ef4444"
               strokeWidth={2.5}
               dot={{ fill: "#ef4444", r: 3.5, strokeWidth: 0 }}
