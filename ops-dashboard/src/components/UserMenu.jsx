@@ -21,7 +21,7 @@ function UserMenu({ user, navigate, handleLogout }) {
       {/* Profile */}
       <div
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-1 hover:bg-zinc-800 transition border border-zinc-200"
+        className="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-1 hover:bg-zinc-800 transition border border-zinc-700"
       >
         <img
           src={user.photo}
