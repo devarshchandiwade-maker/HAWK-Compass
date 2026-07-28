@@ -1005,6 +1005,37 @@ function SortTh({ label, k, sort, onSort }) {
 
 function TaskForm({ task, onSave, onClose, users }) {
   console.log("Users:", users);
+  const [error, setError] = useState("");
+
+  const validate = () => {
+  if (!f.title.trim()) {
+    setError("Task is required.");
+    return false;
+  }
+
+  if (!f.user_id) {
+    setError("Owner is required.");
+    return false;
+  }
+
+  if (!f.priority) {
+    setError("Priority is required.");
+    return false;
+  }
+
+  if (!f.status) {
+    setError("Status is required.");
+    return false;
+  }
+
+  if (!f.dueDate) {
+    setError("Due date is required.");
+    return false;
+  }
+
+  setError("");
+  return true;
+};
 
   const formatDate = (date) => {
     if (!date) return "";
@@ -1038,26 +1069,32 @@ function TaskForm({ task, onSave, onClose, users }) {
   const today = new Date().toISOString().split("T")[0];
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   console.log(task);
+
+  const errorCls = (field) =>
+  error.includes(field)
+    ? "border-red-500 ring-1 ring-red-500"
+    : "";
+
   return (
     <Modal title={task ? "Edit task" : "New task"} onClose={onClose}>
       <div className="space-y-3">
         <Field label="Task">
           <input
             autoFocus
-            className={inputCls}
+            className={`${inputCls} ${errorCls("Task")}`}
             value={f.title}
-            onChange={(e) => set("title", e.target.value)}
+            onChange={(e) => {set("title", e.target.value); setError("")}}
             placeholder="What needs doing?"
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Owner">
             <select
-              className={inputCls}
+              className={`${inputCls} ${errorCls("Owner")}`}
               value={f.user_id}
               onChange={(e) => {
                 const selected = users.find(
-                  (u) => u.id === Number(e.target.value),
+                  (u) => u.id === Number(e.target.value)
                 );
 
                 setF((prev) => ({
@@ -1065,6 +1102,8 @@ function TaskForm({ task, onSave, onClose, users }) {
                   user_id: selected ? selected.id : "",
                   assignee: selected ? selected.name : "",
                 }));
+
+                setError("");
               }}
             >
               <option value="">Select Owner</option>
@@ -1078,9 +1117,9 @@ function TaskForm({ task, onSave, onClose, users }) {
           </Field>
           <Field label="Priority">
             <select
-              className={inputCls}
+              className={`${inputCls} ${errorCls("Priority")}`}
               value={f.priority}
-              onChange={(e) => set("priority", e.target.value)}
+              onChange={(e) => {set("priority", e.target.value); setError("");}}
             >
               {["Low", "Medium", "High"].map((p) => (
                 <option key={p}>{p}</option>
@@ -1089,9 +1128,9 @@ function TaskForm({ task, onSave, onClose, users }) {
           </Field>
           <Field label="Status">
             <select
-              className={inputCls}
+              className={`${inputCls} ${errorCls("Status")}`}
               value={f.status}
-              onChange={(e) => set("status", e.target.value)}
+              onChange={(e) => {set("status", e.target.value); setError("");}}
             >
               {TASK_STATUSES.map((s) => (
                 <option key={s}>{s}</option>
@@ -1101,7 +1140,7 @@ function TaskForm({ task, onSave, onClose, users }) {
           <Field label="Due date">
             <input
               type="date"
-              className={`${inputCls}
+              className={`${inputCls} ${errorCls("Due date")}
                 [&::-webkit-calendar-picker-indicator]:opacity-80
                 [&::-webkit-calendar-picker-indicator]:invert
                 [&::-webkit-calendar-picker-indicator]:sepia
@@ -1110,7 +1149,7 @@ function TaskForm({ task, onSave, onClose, users }) {
               `}
               value={f.dueDate}
               min={today}
-              onChange={(e) => set("dueDate", e.target.value)}
+              onChange={(e) => {set("dueDate", e.target.value); setError("");}}
             />
           </Field>
         </div>
@@ -1131,8 +1170,9 @@ function TaskForm({ task, onSave, onClose, users }) {
           </button>
           <button
             onClick={() => {
-              console.log("Saving Task:", f);
-              if (f.title.trim()) onSave(f);
+                if (!validate()) return;
+                console.log("Saving Task:", f);
+                if (f.title.trim()) onSave(f);
             }}
             className="rounded-md btn-primary px-4 py-2 text-xs font-medium text-white hover:bg-red-500"
           >
@@ -1140,6 +1180,28 @@ function TaskForm({ task, onSave, onClose, users }) {
           </button>
         </div>
       </div>
+
+      {error && (
+  <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400 animate-in fade-in">
+    <div className="flex items-center gap-2">
+      <svg
+        className="h-5 w-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 9v3m0 4h.01M10.29 3.86l-8 14A1 1 0 003.14 19h17.72a1 1 0 00.85-1.5l-8-14a1 1 0 00-1.72 0z"
+        />
+      </svg>
+
+      <span>{error}</span>
+    </div>
+  </div>
+)}
     </Modal>
   );
 }
