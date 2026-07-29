@@ -21,6 +21,6 @@ router.post(
     extractTasks
 );
 
-router.post("/salary-insight", salaryInsight);
+router.post("/salary-insight", generateInsight);
 
 module.exports = router;
