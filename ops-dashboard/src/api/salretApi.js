@@ -35,4 +35,6 @@ export const regenerateMonthInsight = (monthKey) =>
 export const getPinStatus = () => request("/api/settings/pin");
 export const setPin = (pin) => request("/api/settings/pin", { method: "POST", body: JSON.stringify({ pin }) });
 export const verifyPin = (pin) => request("/api/settings/pin/verify", { method: "POST", body: JSON.stringify({ pin }) });
- 
+
+ export const getTarget = () => request("/api/settings/target");
+export const setTarget = (target) => request("/api/settings/target", { method: "PUT", body: JSON.stringify({ target }) });

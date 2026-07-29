@@ -3875,7 +3875,12 @@ const [newStage, setNewStage] = useState("");
 /* SALARY-TO-RETAINER                                                  */
 /* ================================================================== */
 
-const SR_TARGET = 0.46;
+// const SR_TARGET = 0.46;
+
+const [srTarget, setSrTarget] = useState(0.46); // fraction, e.g. 0.46 = 46%
+const [targetInput, setTargetInput] = useState("46"); // what's shown in the input, in %
+const [savingTarget, setSavingTarget] = useState(false);
+
 const pct = (p) => (p == null ? "—" : (p * 100).toFixed(1) + "%");
 const monthLabel = (mk) => {
   const m = /^(\d{4})-(\d{2})$/.exec(mk || "");
@@ -3944,20 +3949,26 @@ function SalRetView() {
  
   // initial load: month list + pin lock status
   useEffect(() => {
-    (async () => {
-      try {
-        const [list, pinStatus] = await Promise.all([api.getMonths(), api.getPinStatus()]);
-        setMonths(list);
-        setSelected(list.length ? list[list.length - 1].month_key : "");
-        setHasPin(pinStatus.hasPin);
-        setUnlocked(!pinStatus.hasPin);
-      } catch {
-        setNote("Couldn't reach the server. Is the API running?");
-      } finally {
-        setLoaded(true);
-      }
-    })();
-  }, []);
+  (async () => {
+    try {
+      const [list, pinStatus, targetRes] = await Promise.all([
+        api.getMonths(),
+        api.getPinStatus(),
+        api.getTarget(),
+      ]);
+      setMonths(list);
+      setSelected(list.length ? list[list.length - 1].month_key : "");
+      setHasPin(pinStatus.hasPin);
+      setUnlocked(!pinStatus.hasPin);
+      setSrTarget(targetRes.target);
+      setTargetInput(String(Math.round(targetRes.target * 1000) / 10));
+    } catch {
+      setNote("Couldn't reach the server. Is the API running?");
+    } finally {
+      setLoaded(true);
+    }
+  })();
+}, []);
  
   // fetch the selected month's detail whenever it changes (and once unlocked)
   useEffect(() => {
@@ -4000,6 +4011,26 @@ function SalRetView() {
       setNote("Couldn't save that retainer value.");
     }
   };
+
+  const saveTarget = async () => {
+  const v = Number(targetInput);
+  if (!Number.isFinite(v) || v <= 0 || v > 100) {
+    setNote("Enter a target between 0 and 100.");
+    return;
+  }
+  setSavingTarget(true);
+  try {
+    const { target } = await api.setTarget(v / 100);
+    setSrTarget(target);
+    setAiInsight(null); // stale — the backend already cleared every cached insight
+    setNote(`Target updated to ${v}%. Insights will regenerate on next view.`);
+  } catch (e) {
+    setNote(e.message || "Couldn't update the target.");
+  } finally {
+    setSavingTarget(false);
+    setTimeout(() => setNote(""), 5000);
+  }
+};
  
   const tryUnlock = async () => {
     try {
@@ -4202,6 +4233,21 @@ const filteredEmployees = empSearch.trim()
           >
             {hasPin ? <Lock size={14} /> : <Unlock size={14} />} {hasPin ? "PIN set" : "Set PIN"}
           </button>
+
+          <div className="flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-2">
+            <Target size={13} className="text-zinc-500" />
+            <input
+              value={targetInput}
+              onChange={(e) => setTargetInput(e.target.value.replace(/[^0-9.]/g, ""))}
+              onBlur={saveTarget}
+              onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+              disabled={savingTarget}
+              className="w-10 bg-transparent text-xs text-zinc-200 outline-none disabled:opacity-50"
+            />
+            <span className="text-xs text-zinc-500">% target</span>
+          </div>
+
+
           <button
             onClick={() => fileRef.current?.click()}
             disabled={importing}
@@ -4240,6 +4286,7 @@ const filteredEmployees = empSearch.trim()
             ytdRev={ytdRev}
             selected={selected}
             onPick={setSelected}
+            target={srTarget}
           />
  
           <div className="mb-2 mt-6 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
@@ -4250,7 +4297,7 @@ const filteredEmployees = empSearch.trim()
               label="Overall Sal/Ret %"
               value={pct(sel.overall)}
               sub={`vs 46% target · avg ${pct(avg)}`}
-              accent={sel.overall != null && sel.overall > SR_TARGET}
+              accent={sel.overall != null && sel.overall > srTarget}
             />
             <Kpi
               label="Brands tracked"
@@ -4262,7 +4309,7 @@ const filteredEmployees = empSearch.trim()
               label="Worst brand (highest)"
               value={worst ? pct(worst.pct) : "—"}
               sub={worst ? worst.brand : ""}
-              accent={worst != null && worst.pct > SR_TARGET}
+              accent={worst != null && worst.pct > srTarget}
             />
           </div>
  
@@ -4300,6 +4347,7 @@ const filteredEmployees = empSearch.trim()
         <BrandRow
           key={r.brand}
           r={r}
+          target={srTarget}
           expanded={!!expanded[r.brand]}
           onToggle={() => setExpanded((p) => ({ ...p, [r.brand]: !p[r.brand] }))}
           onRev={(v) => updateRev(r.brand, v)}
@@ -4447,7 +4495,7 @@ const filteredEmployees = empSearch.trim()
   );
 }
  
-function YtdPanel({ series, ytdOverall, ytdSal, ytdRev, selected, onPick }) {
+function YtdPanel({ series, ytdOverall, ytdSal, ytdRev, selected, onPick, target  }) {
   const over = ytdOverall != null && ytdOverall > SR_TARGET;
   const latest = series.length ? series[series.length - 1] : null;
   const prev = series.length > 1 ? series[series.length - 2] : null;
@@ -4471,9 +4519,11 @@ function YtdPanel({ series, ytdOverall, ytdSal, ytdRev, selected, onPick }) {
           {pct(ytdOverall)}
         </div>
         <div className="mt-2 text-xs text-zinc-400">
+          <div className="mt-2 text-xs text-zinc-400">
           {over
-            ? `${((ytdOverall - SR_TARGET) * 100).toFixed(1)} pts over the 46% target`
-            : `${((SR_TARGET - ytdOverall) * 100).toFixed(1)} pts under the 46% target`}
+            ? `${((ytdOverall - target) * 100).toFixed(1)} pts over the ${targetPct.toFixed(0)}% target`
+            : `${((target - ytdOverall) * 100).toFixed(1)} pts under the ${targetPct.toFixed(0)}% target`}
+        </div>
         </div>
         <div className="mt-3 border-t border-zinc-800 pt-3 text-[11px] text-zinc-500">
           {series.length} month{series.length > 1 ? "s" : ""} · salaries {inrShort(ytdSal)} ÷ retainers {inrShort(ytdRev)}
@@ -4511,10 +4561,10 @@ function YtdPanel({ series, ytdOverall, ytdSal, ytdRev, selected, onPick }) {
                 formatter={(v) => [v + "%", "Overall"]}
               />
               <ReferenceLine
-                y={46}
+                y={targetPct}
                 stroke="#10b981"
                 strokeDasharray="5 4"
-                label={{ value: "46% target", fill: "#10b981", fontSize: 10, position: "insideTopRight" }}
+                label={{ value: `${targetPct.toFixed(0)}% target`, fill: "#10b981", fontSize: 10, position: "insideTopRight" }}
               />
               <Line type="monotone" dataKey="pct" stroke="#7c63ff" strokeWidth={2.5} dot={{ r: 3.5, fill: "#7c63ff", strokeWidth: 0 }} activeDot={{ r: 5 }} />
             </LineChart>
@@ -4577,11 +4627,12 @@ function BrandRow({ r, expanded, onToggle, onRev }) {
     ? "bg-blue-600/20 text-blue-300 ring-1 ring-blue-500/40"
     : r.pct == null
       ? "bg-zinc-700 text-zinc-300"
-      : r.pct <= SR_TARGET
+      : r.pct <= target
         ? "bg-emerald-600/20 text-emerald-300 ring-1 ring-emerald-500/40"
-        : r.pct <= 0.6
+        : r.pct <= target + 0.14
           ? "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/40"
           : "btn-primary/20 text-red-300 ring-1 ring-red-500/40";
+
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/40">
       <div className="flex flex-wrap items-center gap-3 px-4 py-3">

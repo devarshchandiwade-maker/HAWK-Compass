@@ -11,6 +11,11 @@ async function loadMonthData(monthKey) {
   return { month, overall, totalSal: month.grand_salary, totalRev, central: month.central_salary, rows };
 }
 
+async function getTargetPct() {
+  const [[row]] = await pool.query(`SELECT sr_target FROM app_settings WHERE id = 1`);
+  return Number(row?.sr_target ?? 0.46) * 100; // generateInsight's prompt expects percent units (e.g. 46)
+}
+
 // GET /api/months/:monthKey/insight
 // Returns the cached insight if one exists for this month; otherwise generates
 // it once via Gemini and stores it so every future view is a plain DB read.
@@ -31,7 +36,7 @@ exports.getInsight = async (req, res) => {
   }
 
   try {
-    const insight = await generateInsight({ ...data, target: 46 });
+    const insight = await generateInsight({ ...data, target: await getTargetPct() });
     await pool.query(`UPDATE months SET ai_insight = ?, ai_insight_generated_at = NOW() WHERE id = ?`, [
       JSON.stringify(insight),
       data.month.id,
@@ -53,7 +58,7 @@ exports.regenerateInsight = async (req, res) => {
   if (data.overall == null) return res.status(422).json({ error: "No retainer figures yet for this month." });
 
   try {
-    const insight = await generateInsight({ ...data, target: 46 });
+    const insight = await generateInsight({ ...data, target: await getTargetPct() });
     await pool.query(`UPDATE months SET ai_insight = ?, ai_insight_generated_at = NOW() WHERE id = ?`, [
       JSON.stringify(insight),
       data.month.id,
