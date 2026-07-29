@@ -44,7 +44,7 @@ import {
   ClipboardPaste,
   Building2,
   Tag,
-  CheckCircle2, XCircle, Repeat, Briefcase, Wallet, Flame
+  CheckCircle2, XCircle, Repeat, Briefcase, Wallet, Flame, ChevronLeft, ChevronRight
 } from "lucide-react";
 import {
   fetchTasks,
@@ -4058,6 +4058,24 @@ function SalRetView() {
   const [insightLoading, setInsightLoading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
 
+
+
+const [page, setPage] = useState(1);
+const [pageSize, setPageSize] = useState(10);
+
+useEffect(() => {
+  setPage(1);
+}, [search, pageSize]);
+
+const totalPages = pageSize === "all" ? 1 : Math.max(1, Math.ceil(filtered.length / pageSize));
+
+const paginated = useMemo(() => {
+  if (pageSize === "all") return filtered;
+  const start = (page - 1) * pageSize;
+  return filtered.slice(start, start + pageSize);
+}, [filtered, page, pageSize]);
+
+
   useEffect(() => {
   if (!selected || !detail) return;
   let cancelled = false;
@@ -4219,32 +4237,72 @@ const regenerateInsight = async () => {
             <Insight aiInsight={aiInsight} loading={insightLoading} onRegenerate={regenerateInsight} regenerating={regenerating} />
           )}
  
-          <div className="relative mb-3">
-            <Search size={15} className="pointer-events-none absolute left-3 top-2.5 text-zinc-500" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Filter brands… (e.g. JIO, Tata, ACKO)"
-              className={inputCls + " pl-9"}
-            />
-          </div>
- 
-          <div className="space-y-2">
-            {filtered.map((r) => (
-              <BrandRow
-                key={r.brand}
-                r={r}
-                expanded={!!expanded[r.brand]}
-                onToggle={() => setExpanded((p) => ({ ...p, [r.brand]: !p[r.brand] }))}
-                onRev={(v) => updateRev(r.brand, v)}
-              />
-            ))}
-            {filtered.length === 0 && (
-              <div className="rounded-lg border border-dashed border-zinc-800 py-8 text-center text-xs text-zinc-500">
-                No brands match "{search}".
-              </div>
-            )}
-          </div>
+          <div className="relative mb-3 flex items-center gap-2">
+      <div className="relative flex-1">
+        <Search size={15} className="pointer-events-none absolute left-3 top-2.5 text-zinc-500" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Filter brands… (e.g. JIO, Tata, ACKO)"
+          className={inputCls + " pl-9"}
+        />
+      </div>
+
+      <select
+        value={pageSize}
+        onChange={(e) =>
+          setPageSize(e.target.value === "all" ? "all" : Number(e.target.value))
+        }
+        className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs text-zinc-300"
+      >
+        {[5, 10, 20, 25].map((n) => (
+          <option key={n} value={n}>{n} / page</option>
+        ))}
+        <option value="all">All</option>
+      </select>
+    </div>
+
+    <div className="space-y-2">
+      {paginated.map((r) => (
+        <BrandRow
+          key={r.brand}
+          r={r}
+          expanded={!!expanded[r.brand]}
+          onToggle={() => setExpanded((p) => ({ ...p, [r.brand]: !p[r.brand] }))}
+          onRev={(v) => updateRev(r.brand, v)}
+        />
+      ))}
+      {filtered.length === 0 && (
+        <div className="rounded-lg border border-dashed border-zinc-800 py-8 text-center text-xs text-zinc-500">
+          No brands match "{search}".
+        </div>
+      )}
+    </div>
+
+    {pageSize !== "all" && filtered.length > 0 && (
+      <div className="mt-3 flex items-center justify-between text-xs text-zinc-500">
+        <span>
+          Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of {filtered.length}
+        </span>
+        <div className="flex items-center gap-2">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className="rounded-md border border-zinc-700 p-1 disabled:opacity-30"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <span>{page} / {totalPages}</span>
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            className="rounded-md border border-zinc-700 p-1 disabled:opacity-30"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
+    )}
         </>
       )}
  
