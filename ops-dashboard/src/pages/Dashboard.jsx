@@ -89,6 +89,7 @@ import UserMenu from "../components/UserMenu";
 import Salretview from "../components/Salretview"
 
 import * as api from "../api/salretApi";
+import Spinner from "../components/Spinner";
 
 
 /* ------------------------------------------------------------------ */
