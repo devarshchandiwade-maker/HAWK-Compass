@@ -1,96 +1,46 @@
-const axios = require("axios");
+// Calls Gemini and parses the JSON insight it returns.
+const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
-exports.salaryInsight = async (req, res) => {
-  try {
-    const {
-      overall,
-      totalSal,
-      totalRev,
-      central,
-      rows,
-      target,
-    } = req.body;
-
-    const prompt = `
-You are a CFO dashboard assistant.
+async function generateInsight({ overall, totalSal, totalRev, central, rows, target = 46 }) {
+  const prompt = `You are a CFO dashboard assistant.
 
 Analyze this Salary vs Retainer data.
 
 Target Salary %: ${target}%
-
 Overall Salary %: ${((overall || 0) * 100).toFixed(2)}%
-
-Total Monthly Salary:
-₹${totalSal}
-
-Total Monthly Retainer:
-₹${totalRev}
-
-Central Cost:
-₹${central}
+Total Monthly Salary: INR ${totalSal}
+Total Monthly Retainer: INR ${totalRev}
+Central Cost: INR ${central}
 
 Brand Data:
 ${JSON.stringify(rows, null, 2)}
 
-Return ONLY valid JSON.
-
+Return ONLY valid JSON, no markdown fences:
 {
-  "headline":"",
-  "summary":"",
-  "risk":"",
-  "recommendations":[
-    "...",
-    "...",
-    "..."
-  ],
-  "biggest_drags":[
-    "...",
-    "..."
-  ]
+  "headline": "",
+  "summary": "",
+  "risk": "",
+  "recommendations": ["...", "...", "..."],
+  "biggest_drags": ["...", "..."]
+}`;
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": process.env.GEMINI_API_KEY,
+      },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+    },
+  );
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || `Gemini request failed (${res.status})`);
+
+  let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  text = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+  return JSON.parse(text);
 }
 
-Do not wrap the JSON in markdown.
-`;
-
-    const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    let text =
-      response.data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-    text = text
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-
-    const json = JSON.parse(text);
-
-    res.json(json);
-  } catch (err) {
-    console.error(
-      err.response?.data || err.message || err
-    );
-
-    res.status(500).json({
-      message: "Failed to generate AI insight",
-      error: err.response?.data || err.message,
-    });
-  }
-};
+module.exports = { generateInsight };

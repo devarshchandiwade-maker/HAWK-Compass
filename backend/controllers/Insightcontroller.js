@@ -1,5 +1,5 @@
 const pool = require("../db/db");
-const { salaryInsight } = require("../controllers/aiInsightController");
+const { generateInsight } = require("../controllers/aiInsightController");
 
 async function loadMonthData(monthKey) {
   const [[month]] = await pool.query(`SELECT * FROM months WHERE month_key = ?`, [monthKey]);
@@ -31,7 +31,7 @@ exports.getInsight = async (req, res) => {
   }
 
   try {
-    const insight = await salaryInsight({ ...data});
+    const insight = await generateInsight({ ...data, target: 46 });
     await pool.query(`UPDATE months SET ai_insight = ?, ai_insight_generated_at = NOW() WHERE id = ?`, [
       JSON.stringify(insight),
       data.month.id,
@@ -53,7 +53,7 @@ exports.regenerateInsight = async (req, res) => {
   if (data.overall == null) return res.status(422).json({ error: "No retainer figures yet for this month." });
 
   try {
-    const insight = await salaryInsight({ ...data });
+    const insight = await generateInsight({ ...data, target: 46 });
     await pool.query(`UPDATE months SET ai_insight = ?, ai_insight_generated_at = NOW() WHERE id = ?`, [
       JSON.stringify(insight),
       data.month.id,
