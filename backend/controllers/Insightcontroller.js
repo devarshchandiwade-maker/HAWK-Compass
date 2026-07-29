@@ -46,7 +46,7 @@ exports.getInsight = async (req, res) => {
 // POST /api/months/:monthKey/insight/regenerate
 // Force a fresh Gemini call — use this behind an explicit "Regenerate" button,
 // not automatically, so edits don't silently burn tokens on every keystroke.
-exports.resalaryInsight = async (req, res) => {
+exports.regenerateInsight = async (req, res) => {
   const { monthKey } = req.params;
   const data = await loadMonthData(monthKey);
   if (!data) return res.status(404).json({ error: "Month not found." });
