@@ -3933,6 +3933,8 @@ function SalRetView() {
   const [note, setNote] = useState("");
   const [importing, setImporting] = useState(false);
   const fileRef = useRef();
+
+  
  
   const refreshMonths = async () => {
     const list = await api.getMonths();
@@ -4053,32 +4055,31 @@ function SalRetView() {
   const monthKeys = months.map((m) => m.month_key);
 
   const [aiInsight, setAiInsight] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [insightLoading, setInsightLoading] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
-    if (!sel.overall) return;
+  if (!selected || !detail) return;
+  let cancelled = false;
+  setAiInsight(null);
+  setInsightLoading(true);
+  api.getMonthInsight(selected)
+    .then((data) => { if (!cancelled) setAiInsight(data); })
+    .catch(() => { if (!cancelled) setAiInsight(null); })
+    .finally(() => { if (!cancelled) setInsightLoading(false); });
+  return () => { cancelled = true; };
+}, [selected, !!detail]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    async function loadInsight() {
-        try {
-            setLoading(true);
-
-            const { data } = await getSalaryInsight({
-                overall: sel.overall,
-                totalSal: sel.sal,
-                totalRev: sel.rev,
-                central,
-                rows,
-                target: 46,
-            });
-
-            setAiInsight(data);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    loadInsight();
-}, [sel.overall, sel.sal, sel.rev, central, rows]);
+const regenerateInsight = async () => {
+  setRegenerating(true);
+  try {
+    setAiInsight(await api.regenerateMonthInsight(selected));
+  } catch {
+    setNote("Couldn't regenerate the insight right now.");
+  } finally {
+    setRegenerating(false);
+  }
+};
  
   /* ---- locked state ---- */
   if (!loaded) return <div className="py-16 text-center text-sm text-zinc-500">Loading…</div>;
@@ -4215,15 +4216,7 @@ function SalRetView() {
           </div>
  
           {sel.overall != null && (
-            <Insight
-                overall={sel.overall}
-                totalSal={sel.sal}
-                totalRev={sel.rev}
-                central={central}
-                rows={withPct}
-                loading={loading}
-                aiInsight={aiInsight}
-            />
+            <Insight aiInsight={aiInsight} loading={insightLoading} onRegenerate={regenerateInsight} regenerating={regenerating} />
           )}
  
           <div className="relative mb-3">
@@ -4352,80 +4345,46 @@ function YtdPanel({ series, ytdOverall, ytdSal, ytdRev, selected, onPick }) {
   );
 }
  
-function Insight({ overall, totalSal, totalRev, central, rows, loading, aiInsight }) {
-  const over = overall > SR_TARGET;
-  const dpts = Math.abs(overall - SR_TARGET) * 100;
-  const buffer = SR_TARGET * totalRev - totalSal;
-  const needRev = totalSal / SR_TARGET - totalRev;
-  const cutSal = totalSal - SR_TARGET * totalRev;
-  const drags = [...rows]
-    .filter((r) => r.pct > SR_TARGET)
-    .sort((a, b) => b.sal * (b.pct - SR_TARGET) - a.sal * (a.pct - SR_TARGET))
-    .slice(0, 3);
- 
+function Insight({ aiInsight, loading, onRegenerate, regenerating }) {
+  if (loading) return <div className="mb-5 text-sm text-zinc-400">Generating AI insight…</div>;
+  if (!aiInsight) return null;
+
+  const over = aiInsight.risk ? true : false; // or drive the border off whatever signal you prefer
   return (
-    <div
-  className={`mb-5 rounded-xl border p-5 ${
-    overall > SR_TARGET
-      ? "border-red-500/30 bg-red-500/5"
-      : "border-emerald-500/30 bg-emerald-500/5"
-  }`}
->
-  {loading ? (
-    <div className="text-sm text-zinc-400">
-      Generating AI insight...
-    </div>
-  ) : aiInsight && (
-    <>
-      <h3 className="text-lg font-semibold text-white">
-        {aiInsight.headline}
-      </h3>
-
-      <p className="mt-3 text-zinc-300">
-        {aiInsight.summary}
-      </p>
-
-      <div className="mt-4 rounded-lg bg-zinc-900/50 p-3">
-        <div className="text-red-300 font-medium">
-          Risk
-        </div>
-
-        <div className="text-sm text-zinc-300">
-          {aiInsight.risk}
-        </div>
+    <div className={`mb-5 rounded-xl border p-5 ${over ? "border-red-500/30 bg-red-500/5" : "border-emerald-500/30 bg-emerald-500/5"}`}>
+      <div className="mb-2 flex items-start justify-between gap-3">
+        <h3 className="text-lg font-semibold text-white">{aiInsight.headline}</h3>
+        <button
+          onClick={onRegenerate}
+          disabled={regenerating}
+          className="shrink-0 rounded-md border border-zinc-700 px-2 py-1 text-[11px] text-zinc-400 hover:bg-zinc-800 disabled:opacity-50"
+        >
+          {regenerating ? "Regenerating…" : "Regenerate"}
+        </button>
       </div>
-
+      <p className="mt-1 text-zinc-300">{aiInsight.summary}</p>
+      <div className="mt-4 rounded-lg bg-zinc-900/50 p-3">
+        <div className="font-medium text-red-300">Risk</div>
+        <div className="text-sm text-zinc-300">{aiInsight.risk}</div>
+      </div>
       <div className="mt-4">
-        <div className="font-medium text-white mb-2">
-          Recommendations
-        </div>
-
+        <div className="mb-2 font-medium text-white">Recommendations</div>
         <ul className="space-y-2 text-sm text-zinc-300">
-          {aiInsight.recommendations.map((item, i) => (
-            <li key={i}>• {item}</li>
-          ))}
+          {aiInsight.recommendations.map((item, i) => <li key={i}>• {item}</li>)}
         </ul>
       </div>
-
       <div className="mt-4">
-        <div className="font-medium text-white mb-2">
-          Biggest Drags
-        </div>
-
+        <div className="mb-2 font-medium text-white">Biggest Drags</div>
         <div className="flex flex-wrap gap-2">
-          {aiInsight.biggest_drags.map((brand, i) => (
-            <span
-              key={i}
-              className="rounded bg-red-500/10 px-2 py-1 text-red-300"
-            >
-              {brand}
-            </span>
+          {aiInsight.biggest_drags.map((b, i) => (
+            <span key={i} className="rounded bg-red-500/10 px-2 py-1 text-red-300">{b}</span>
           ))}
         </div>
       </div>
-    </>
-  )}
-</div>
+      {aiInsight.cached === false && (
+        <div className="mt-3 text-[10px] text-zinc-600">Freshly generated · {new Date(aiInsight.generatedAt).toLocaleString("en-IN")}</div>
+      )}
+    </div>
   );
 }
  

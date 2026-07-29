@@ -2,6 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const pool = require("../db/db");
 const { parseSalRet } = require("../controllers/parsesalret");
+const { getInsight, regenerateInsight } = require("../controllers/Insightcontroller");
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
@@ -33,7 +34,8 @@ router.post("/import", upload.single("file"), async (req, res) => {
     await conn.query(
       `INSERT INTO months (month_key, sheet_name, central_salary, grand_salary)
        VALUES (?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE sheet_name=VALUES(sheet_name), central_salary=VALUES(central_salary), grand_salary=VALUES(grand_salary)`,
+       ON DUPLICATE KEY UPDATE sheet_name=VALUES(sheet_name), central_salary=VALUES(central_salary), grand_salary=VALUES(grand_salary),
+         ai_insight=NULL, ai_insight_generated_at=NULL`,
       [monthKey, parsed.sheet, parsed.central, parsed.grandSalary],
     );
     const [[{ id: monthId }]] = await conn.query(`SELECT id FROM months WHERE month_key = ?`, [monthKey]);
@@ -136,6 +138,7 @@ router.get("/:monthKey", async (req, res) => {
 });
 
 // PATCH /api/months/:monthKey/brands/:brandName/retainer  { value: number }
+
 router.patch("/:monthKey/brands/:brandName/retainer", async (req, res) => {
   const { monthKey, brandName } = req.params;
   const value = Number(req.body.value);
@@ -149,8 +152,18 @@ router.patch("/:monthKey/brands/:brandName/retainer", async (req, res) => {
     [value, month.id, decodeURIComponent(brandName)],
   );
   if (result.affectedRows === 0) return res.status(404).json({ error: "Brand not found for this month." });
+
+  // The insight was generated against the old numbers — clear it so the next
+  // /insight view (or an explicit "Regenerate") reflects the edit.
+  await pool.query(`UPDATE months SET ai_insight = NULL, ai_insight_generated_at = NULL WHERE id = ?`, [month.id]);
+
   res.json({ ok: true });
 });
+
+// GET  /api/months/:monthKey/insight            -> cached insight, generating once if missing
+// POST /api/months/:monthKey/insight/regenerate  -> force a fresh Gemini call
+router.get("/:monthKey/insight", getInsight);
+router.post("/:monthKey/insight/regenerate", regenerateInsight);
 
 // DELETE /api/months/:monthKey  -> remove an imported month entirely
 router.delete("/:monthKey", async (req, res) => {
