@@ -3877,9 +3877,7 @@ const [newStage, setNewStage] = useState("");
 
 // const SR_TARGET = 0.46;
 
-const [srTarget, setSrTarget] = useState(0.46); // fraction, e.g. 0.46 = 46%
-const [targetInput, setTargetInput] = useState("46"); // what's shown in the input, in %
-const [savingTarget, setSavingTarget] = useState(false);
+
 
 const pct = (p) => (p == null ? "—" : (p * 100).toFixed(1) + "%");
 const monthLabel = (mk) => {
@@ -3938,6 +3936,10 @@ function SalRetView() {
   const [note, setNote] = useState("");
   const [importing, setImporting] = useState(false);
   const fileRef = useRef();
+
+  const [srTarget, setSrTarget] = useState(0.46); // fraction, e.g. 0.46 = 46%
+  const [targetInput, setTargetInput] = useState("46"); // what's shown in the input, in %
+  const [savingTarget, setSavingTarget] = useState(false);
 
   
  
