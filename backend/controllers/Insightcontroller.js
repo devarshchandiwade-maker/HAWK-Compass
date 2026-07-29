@@ -1,5 +1,5 @@
 const pool = require("../db/db");
-const { salaryInsight } = require("../services/gemini");
+const { salaryInsight } = require("../controllers/aiInsightController");
 
 async function loadMonthData(monthKey) {
   const [[month]] = await pool.query(`SELECT * FROM months WHERE month_key = ?`, [monthKey]);
