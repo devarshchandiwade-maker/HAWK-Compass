@@ -4098,6 +4098,38 @@ const regenerateInsight = async () => {
     setRegenerating(false);
   }
 };
+
+// Flatten detail.brands[].people[] into one row per unique employee,
+// each carrying every brand they're allocated to this month.
+const employeeIndex = useMemo(() => {
+  if (!detail) return [];
+  const byName = new Map();
+  for (const b of detail.brands) {
+    for (const p of b.people) {
+      if (!byName.has(p.name)) {
+        byName.set(p.name, {
+          name: p.name,
+          designation: p.designation,
+          salary: p.salary,
+          totalAlloc: 0,
+          brands: [],
+        });
+      }
+      const e = byName.get(p.name);
+      e.totalAlloc += p.alloc;
+      e.brands.push({ brand: b.brand, alloc: p.alloc, contrib: p.contrib });
+    }
+  }
+  return [...byName.values()]
+    .map((e) => ({ ...e, brands: e.brands.sort((a, c) => c.contrib - a.contrib) }))
+    .sort((a, b) => b.brands.length - a.brands.length);
+}, [detail]);
+
+const [empSearch, setEmpSearch] = useState("");
+const [empExpanded, setEmpExpanded] = useState({});
+const filteredEmployees = empSearch.trim()
+  ? employeeIndex.filter((e) => e.name.toLowerCase().includes(empSearch.trim().toLowerCase()))
+  : [];
  
   /* ---- locked state ---- */
   if (!loaded) return <div className="py-16 text-center text-sm text-zinc-500">Loading…</div>;
@@ -4134,6 +4166,7 @@ const regenerateInsight = async () => {
       </div>
     );
   }
+
  
   return (
     <div>
@@ -4303,8 +4336,100 @@ const regenerateInsight = async () => {
         </div>
       </div>
     )}
+
+
+    <div className="mt-8">
+  <div className="mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+    <Users size={12} /> Look up a person · {monthLabel(selected)}
+  </div>
+  <div className="relative mb-3">
+    <Search size={15} className="pointer-events-none absolute left-3 top-2.5 text-zinc-500" />
+    <input
+      value={empSearch}
+      onChange={(e) => setEmpSearch(e.target.value)}
+      placeholder="Search by employee name…"
+      className={inputCls + " pl-9"}
+    />
+  </div>
+
+  {empSearch.trim() && (
+    <div className="space-y-2">
+      {filteredEmployees.length === 0 && (
+        <div className="rounded-lg border border-dashed border-zinc-800 py-6 text-center text-xs text-zinc-500">
+          No one matches "{empSearch}" in {monthLabel(selected)}.
+        </div>
+      )}
+      {filteredEmployees.map((e) => {
+        const open = !!empExpanded[e.name];
+        const overAllocated = e.totalAlloc > 1.02;
+        const underAllocated = e.totalAlloc < 0.98 && e.brands.length > 0;
+        return (
+          <div key={e.name} className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/40">
+            <button
+              onClick={() => setEmpExpanded((p) => ({ ...p, [e.name]: !p[e.name] }))}
+              className="flex w-full flex-wrap items-center gap-3 px-4 py-3 text-left"
+            >
+              <ChevronDown size={15} className={`text-zinc-500 transition ${open ? "rotate-180" : ""}`} />
+              <span className="font-medium text-zinc-100">{e.name}</span>
+              <span className="text-[11px] text-zinc-500">{e.designation || "—"}</span>
+              <span className="ml-auto flex items-center gap-2">
+                <span className="rounded-full bg-zinc-800 px-2 py-1 text-[11px] text-zinc-300">
+                  {e.brands.length} brand{e.brands.length !== 1 ? "s" : ""}
+                </span>
+                {overAllocated && (
+                  <span
+                    title="Allocation across brands adds up to over 100% — worth checking the sheet"
+                    className="rounded-full bg-amber-500/15 px-2 py-1 text-[11px] text-amber-300 ring-1 ring-amber-500/40"
+                  >
+                    {Math.round(e.totalAlloc * 100)}% allocated
+                  </span>
+                )}
+                {underAllocated && (
+                  <span
+                    title="Allocated to less than 100% — remaining bandwidth isn't billed to any brand"
+                    className="rounded-full bg-blue-600/15 px-2 py-1 text-[11px] text-blue-300 ring-1 ring-blue-500/40"
+                  >
+                    {Math.round(e.totalAlloc * 100)}% allocated
+                  </span>
+                )}
+                <span className="font-mono text-sm text-zinc-200">{inr(e.salary)}</span>
+              </span>
+            </button>
+            {open && (
+              <div className="border-t border-zinc-800 bg-zinc-950/50 px-4 py-3">
+                <table className="w-full text-xs">
+                  <thead className="text-left text-[10px] uppercase tracking-wider text-zinc-600">
+                    <tr>
+                      <th className="py-1 font-medium">Brand</th>
+                      <th className="py-1 text-right font-medium">% allocated</th>
+                      <th className="py-1 text-right font-medium">Cost to brand</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {e.brands.map((b) => (
+                      <tr key={b.brand} className="border-t border-zinc-800/60">
+                        <td className="py-1.5 text-zinc-200">{b.brand}</td>
+                        <td className="py-1.5 text-right text-zinc-300">{Math.round(b.alloc * 100)}%</td>
+                        <td className="py-1.5 text-right font-mono text-zinc-200">{inr(Math.round(b.contrib))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="mt-2 text-[11px] text-zinc-500">
+                  Base salary {inr(e.salary)}/mo, spread across {e.brands.length} brand{e.brands.length !== 1 ? "s" : ""} this month.
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  )}
+</div>
         </>
       )}
+
+
  
       {showPinMgr && (
         <PinManager
