@@ -4498,7 +4498,7 @@ const filteredEmployees = empSearch.trim()
 }
  
 function YtdPanel({ series, ytdOverall, ytdSal, ytdRev, selected, onPick, target  }) {
-  const over = ytdOverall != null && ytdOverall > SR_TARGET;
+  const over = ytdOverall != null && ytdOverall > target;
   const latest = series.length ? series[series.length - 1] : null;
   const prev = series.length > 1 ? series[series.length - 2] : null;
   const delta = latest && prev ? latest.pct - prev.pct : null;
