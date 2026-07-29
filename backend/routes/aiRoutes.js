@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("multer");
 
 const { extractTasks } = require("../controllers/aiController");
-const { salaryInsight } = require("../controllers/aiInsightController");
+const { generateInsight } = require("../controllers/aiInsightController");
 
 const router = express.Router();
 
