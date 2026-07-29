@@ -1,15 +1,7 @@
 const axios = require("axios");
 
-exports.generateInsight = async (req, res) => {
-  try {
-    const {
-      overall,
-      totalSal,
-      totalRev,
-      central,
-      rows,
-      target = 46,
-    } = req.body;
+exports.generateInsight = async ({ overall, totalSal, totalRev, central, rows, target = 46 }) => {
+
 
     const prompt = `
 You are a CFO dashboard assistant.
@@ -35,15 +27,15 @@ ${JSON.stringify(rows, null, 2)}
 Return ONLY valid JSON.
 
 {
-  "headline": "",
-  "summary": "",
-  "risk": "",
-  "recommendations": [
+  "headline":"",
+  "summary":"",
+  "risk":"",
+  "recommendations":[
     "...",
     "...",
     "..."
   ],
-  "biggest_drags": [
+  "biggest_drags":[
     "...",
     "..."
   ]
@@ -53,7 +45,7 @@ Do not wrap the JSON in markdown.
 `;
 
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_MODEL || "gemini-2.5-flash"}:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         contents: [
           {
@@ -72,19 +64,11 @@ Do not wrap the JSON in markdown.
       }
     );
 
-    let text = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    
+  let text = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    text = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+  text = text.replace(/```json/gi, "").replace(/```/g, "").trim();
 
-    return JSON.parse(text); 
-  } catch (err) {
-    console.error(
-      err.response?.data || err.message || err
-    );
-
-    res.status(500).json({
-      message: "Failed to generate AI insight",
-      error: err.response?.data || err.message,
-    });
-  }
+  return JSON.parse(text);
+   
 };
