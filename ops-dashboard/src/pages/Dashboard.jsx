@@ -3941,6 +3941,9 @@ function SalRetView() {
   const [targetInput, setTargetInput] = useState("46"); // what's shown in the input, in %
   const [savingTarget, setSavingTarget] = useState(false);
 
+
+  const [toast, setToast] = useState(null);
+
   
  
   const refreshMonths = async () => {
@@ -3979,21 +3982,28 @@ function SalRetView() {
   }, [selected, unlocked]);
  
   const onFile = async (file) => {
-    if (!file) return;
-    setImporting(true);
-    try {
-      const result = await api.importMonth(file);
-      await refreshMonths();
-      setSelected(result.monthKey);
-      setNote(`Imported ${monthLabel(result.monthKey)} — ${result.employees} people across ${result.brands} brands.`);
-    } catch (e) {
-      setNote(e.message || "That file couldn't be read.");
-    } finally {
-      setImporting(false);
-      setTimeout(() => setNote(""), 5000);
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  };
+  if (!file) return;
+  setImporting(true);
+  try {
+    const result = await api.importMonth(file);
+    await refreshMonths();
+    setSelected(result.monthKey);
+    setToast({
+      type: "import",
+      title: "Import successful",
+      message: `${monthLabel(result.monthKey)} — ${result.employees} people across ${result.brands} brands.`,
+    });
+  } catch (e) {
+    setToast({
+      type: "error",
+      title: "Import failed",
+      message: e.message || "That file couldn't be read.",
+    });
+  } finally {
+    setImporting(false);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+};
  
   const updateRev = async (brand, value) => {
     const v = Number(String(value).replace(/[^0-9.]/g, "")) || 0;
@@ -4255,7 +4265,7 @@ const filteredEmployees = empSearch.trim()
             disabled={importing}
             className="flex items-center gap-1.5 rounded-md btn-primary px-3 py-2 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
           >
-            <Upload size={14} /> {importing ? "Importing…" : "Import month"}
+            {importing ? <Spinner size={14} /> : <Upload size={14} />} {importing ? "Importing…" : "Import month"}
           </button>
           <input
             ref={fileRef}
@@ -4493,6 +4503,8 @@ const filteredEmployees = empSearch.trim()
           }}
         />
       )}
+
+      <PipelineToast toast={toast} onClose={() => setToast(null)} />
     </div>
   );
 }
