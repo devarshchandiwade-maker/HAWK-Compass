@@ -89,7 +89,7 @@ import UserMenu from "../components/UserMenu";
 import Salretview from "../components/Salretview"
 
 import * as api from "../api/salretApi";
-import Spinner from "../components/Spinner";
+import ImportOverlay from "../components/Importoverlay";
 
 
 /* ------------------------------------------------------------------ */
@@ -4266,7 +4266,7 @@ const filteredEmployees = empSearch.trim()
             disabled={importing}
             className="flex items-center gap-1.5 rounded-md btn-primary px-3 py-2 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
           >
-            {importing ? <Spinner size={14} /> : <Upload size={14} />} {importing ? "Importing…" : "Import month"}
+            <Upload size={14} /> {importing ? "Importing…" : "Import month"}
           </button>
           <input
             ref={fileRef}
@@ -4504,7 +4504,7 @@ const filteredEmployees = empSearch.trim()
           }}
         />
       )}
-
+      {importing && <ImportOverlay />}
       <PipelineToast toast={toast} onClose={() => setToast(null)} />
     </div>
   );
