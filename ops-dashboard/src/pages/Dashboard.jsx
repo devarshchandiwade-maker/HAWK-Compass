@@ -4624,7 +4624,7 @@ function Insight({ aiInsight, loading, onRegenerate, regenerating }) {
   );
 }
  
-function BrandRow({ r, expanded, onToggle, onRev }) {
+function BrandRow({ r, target, expanded, onToggle, onRev }) {
   const rampup = r.revenue <= 0 && r.sal > 0;
   const band = rampup
     ? "bg-blue-600/20 text-blue-300 ring-1 ring-blue-500/40"
