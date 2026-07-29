@@ -22,8 +22,8 @@ export default function Login() {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       navigate("/dashboard");
-    } catch (e) {
-        console.error(e);
+    } catch (er) {
+        console.error(er);
 
   setError(
     err.response?.data?.message ||
