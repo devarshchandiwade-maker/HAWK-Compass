@@ -44,7 +44,7 @@ import {
   ClipboardPaste,
   Building2,
   Tag,
-  CheckCircle2, XCircle, Repeat, Briefcase, Wallet, Flame, ChevronLeft, ChevronRight
+  CheckCircle2, XCircle, Repeat, Briefcase, Wallet, Flame, ChevronLeft, ChevronRight, Pill
 } from "lucide-react";
 import {
   fetchTasks,

@@ -172,9 +172,9 @@ const updateTask = async (req, res) => {
         );
       }
     }
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: err.message });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({ message: e.message });
   }
 };
 
