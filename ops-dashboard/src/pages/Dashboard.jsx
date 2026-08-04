@@ -2042,23 +2042,21 @@ function RetainersView({ retainers, setRetainers }) {
                     </td>
                     <td className="px-4 py-3">
                       {flag === "expired" && (
-                        
-                          Expired
-                       
+                        <span>Expired</span>
                       )}
+
                       {flag === "urgent" && (
-                        
-                          {d}+" days left"
-                       
+                        <span>{d} days left</span>
                       )}
+
                       {flag === "soon" && (
-                       
-                          {d}+"d left"
-                        
+                        <span>{d}d left</span>
                       )}
+
                       {flag === "ok" && (
-                        {d}+"d"
+                        <span>{d}d</span>
                       )}
+
                       {flag === null && (
                         <span className="text-zinc-600">—</span>
                       )}
