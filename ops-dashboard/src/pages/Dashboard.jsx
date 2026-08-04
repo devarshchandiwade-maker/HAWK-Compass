@@ -2042,23 +2042,37 @@ function RetainersView({ retainers, setRetainers }) {
                     </td>
                     <td className="px-4 py-3">
                       {flag === "expired" && (
-                        <span>Expired</span>
+                        <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700 border border-red-200">
+                          Expired
+                        </span>
                       )}
 
                       {flag === "urgent" && (
-                        <span>{d} days left</span>
+                        <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700 border border-red-200">
+                          {d} days left
+                        </span>
                       )}
 
                       {flag === "soon" && (
-                        <span>{d}d left</span>
+                        <span className="inline-flex items-center rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700 border border-orange-200">
+                          {d} days left
+                        </span>
                       )}
 
                       {flag === "ok" && (
-                        <span>{d}d</span>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold border ${
+                            d <= 180
+                              ? "bg-yellow-100 text-yellow-800 border-yellow-200"
+                              : "bg-green-100 text-green-700 border-green-200"
+                          }`}
+                        >
+                          {d} days left
+                        </span>
                       )}
 
                       {flag === null && (
-                        <span className="text-zinc-600">—</span>
+                        <span className="text-zinc-500">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
