@@ -14,6 +14,7 @@ export default defineConfig({
     allowedHosts: [
       "hawk-compass.up.railway.app",
       "hawk-compass.com",
+      "compass.hawk.gozoop.com",
     ],
   },
 
@@ -23,6 +24,7 @@ export default defineConfig({
     allowedHosts: [
       "hawk-compass.up.railway.app",
       "hawk-compass.com",
+      "compass.hawk.gozoop.com",
     ],
   },
 })

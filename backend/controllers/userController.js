@@ -14,10 +14,10 @@ exports.getUsers = async (req, res) => {
 
     res.json(rows);
 
-  } catch (err) {
-    console.error(err);
+  } catch (e) {
+    console.error(e);
     res.status(500).json({
-      message: err.message,
+      message: e.message,
     });
   }
 };
