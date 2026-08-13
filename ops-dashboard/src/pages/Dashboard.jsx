@@ -1726,6 +1726,58 @@ function looksNumeric(vals) {
   return filled.filter((v) => parseAmount(v) > 0).length >= filled.length * 0.6;
 }
 
+// Normalizes a cell value (Date object, Excel serial number, or string)
+// into a "YYYY-MM-DD" string, or "" if it can't be parsed.
+function normDate(v) {
+  if (v == null || v === "") return "";
+
+  // Already a JS Date (cellDates: true gives us this for real date cells)
+  if (v instanceof Date && !isNaN(v)) {
+    return v.toISOString().slice(0, 10);
+  }
+
+  // Excel serial date number (in case cellDates missed it, e.g. from a formula)
+  if (typeof v === "number") {
+    const epoch = new Date(Date.UTC(1899, 11, 30)); // Excel's day-0
+    const d = new Date(epoch.getTime() + v * 86400000);
+    if (!isNaN(d)) return d.toISOString().slice(0, 10);
+    return "";
+  }
+
+  const s = String(v).trim();
+  if (!s) return "";
+
+  // ISO: 2025-01-15 or 2025/01/15
+  let m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+  if (m) {
+    const [, y, mo, d] = m;
+    const dt = new Date(Date.UTC(+y, +mo - 1, +d));
+    if (!isNaN(dt)) return dt.toISOString().slice(0, 10);
+  }
+
+  // DD/MM/YYYY or DD-MM-YYYY (common in India) — day-first assumed when day > 12
+  m = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})$/);
+  if (m) {
+    let [, a, b, y] = m;
+    if (y.length === 2) y = (+y > 50 ? "19" : "20") + y;
+    let day = +a, mon = +b;
+    if (day > 12 && mon <= 12) {
+      // definitely DD/MM
+    } else if (mon > 12 && day <= 12) {
+      // actually MM/DD, swap
+      [day, mon] = [mon, day];
+    }
+    const dt = new Date(Date.UTC(+y, mon - 1, day));
+    if (!isNaN(dt)) return dt.toISOString().slice(0, 10);
+  }
+
+  // Fallback: let the JS Date parser try (handles "Jan 15 2025", "15 January 2025", etc.)
+  const parsed = new Date(s);
+  if (!isNaN(parsed)) return parsed.toISOString().slice(0, 10);
+
+  return "";
+}
+
 function looksDate(vals) {
   const filled = vals.filter((v) => v !== "" && v != null);
   if (!filled.length) return false;
