@@ -11,7 +11,7 @@ exports.getProfile = async (req, res) => {
                 email,
                 photo,
                 phone,
-                bio
+                designation
              FROM users
              WHERE id = ?`,
             [userId]
@@ -40,7 +40,7 @@ exports.updateProfile = async (req, res) => {
         const {
             name,
             phone,
-            bio,
+            designation,
         } = req.body;
 
         await db.query(
@@ -48,12 +48,12 @@ exports.updateProfile = async (req, res) => {
              SET
                 name = ?,
                 phone = ?,
-                bio = ?
+                designation = ?
              WHERE id = ?`,
             [
                 name,
                 phone,
-                bio,
+                designation,
                 userId,
             ]
         );

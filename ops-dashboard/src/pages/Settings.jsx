@@ -4,7 +4,7 @@ import {
   User,
   Mail,
   Phone,
-  FileText,
+  Briefcase,
   CheckCircle2,
   X,
   AlertCircle,
@@ -22,7 +22,7 @@ export default function Settings() {
     name: "",
     email: "",
     phone: "",
-    bio: "",
+    designation: "",
     photo: "",
   });
 
@@ -64,7 +64,7 @@ export default function Settings() {
         name: data.name || "",
         email: data.email || "",
         phone: data.phone || "",
-        bio: data.bio || "",
+        designation: data.designation || "",
         photo: data.photo || "",
       });
     } catch (err) {
@@ -83,7 +83,7 @@ export default function Settings() {
       await updateProfile({
         name: profile.name,
         phone: profile.phone,
-        bio: profile.bio,
+        designation: profile.designation,
       });
 
       setToast({
@@ -219,6 +219,28 @@ export default function Settings() {
 
             <div>
               <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                Designation
+              </label>
+              <div className="relative">
+                <Briefcase
+                  size={16}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+                />
+                <input
+                  className="w-full rounded-lg border border-white/10 bg-white/[0.03] py-2.5 pl-9 pr-3 text-sm text-white outline-none transition-colors focus:border-[#78c84d]/50 focus:ring-2 focus:ring-[#78c84d]/30"
+                  value={profile.designation}
+                  onChange={(e) =>
+                    setProfile({
+                      ...profile,
+                      designation: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-slate-400">
                 Email
               </label>
               <div className="relative">
@@ -250,29 +272,6 @@ export default function Settings() {
                     setProfile({
                       ...profile,
                       phone: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-slate-400">
-                Bio
-              </label>
-              <div className="relative">
-                <FileText
-                  size={16}
-                  className="pointer-events-none absolute left-3 top-3 text-slate-500"
-                />
-                <textarea
-                  rows="4"
-                  className="w-full resize-none rounded-lg border border-white/10 bg-white/[0.03] py-2.5 pl-9 pr-3 text-sm text-white outline-none transition-colors focus:border-[#78c84d]/50 focus:ring-2 focus:ring-[#78c84d]/30"
-                  value={profile.bio}
-                  onChange={(e) =>
-                    setProfile({
-                      ...profile,
-                      bio: e.target.value,
                     })
                   }
                 />

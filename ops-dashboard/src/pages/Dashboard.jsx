@@ -446,11 +446,8 @@ export default function App() {
           <div className="flex items-center gap-2.5">
             <CompassMark size={32} />
             <div>
-              <div className="text-[15px] font-semibold leading-none tracking-tight">
+              <div className="text-[20px] font-semibold leading-none tracking-tight">
                 Compass
-              </div>
-              <div className="mt-1 text-[11px] text-zinc-500">
-                Tasks · Retainers · Pipeline · Sal/Ret
               </div>
             </div>
           </div>
@@ -714,9 +711,7 @@ function TasksView({ tasks, setTasks, users, setUsers }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold tracking-tight">Task Tracker</h2>
-          <p className="text-xs text-zinc-500">
-            Shared work for the Sales team and your COO.
-          </p>
+          
         </div>
         <div className="flex gap-2">
           {/* <button
@@ -1924,10 +1919,7 @@ function RetainersView({ retainers, setRetainers }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold tracking-tight">Retainers</h2>
-          <p className="text-xs text-zinc-500">
-            Import your client list from Excel, with amounts and contract end
-            dates.
-          </p>
+          
         </div>
         <div className="flex gap-2">
           <button
@@ -1946,7 +1938,7 @@ function RetainersView({ retainers, setRetainers }) {
           {retainers.length > 0 && (
             <button
               onClick={() => setConfirmClear(true)}
-              className="flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:border-red-500/50 hover:text-red-300"
+              className="flex items-center gap-1.5 rounded-md btn-primary px-3 py-2 text-xs font-medium text-white hover:bg-red-500 hover:border-red-500/50 hover:text-red-300"
             >
               <Trash2 size={14} /> Clear all
             </button>
@@ -2577,10 +2569,7 @@ function PipelineView({ leads, setLeads, owners }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold tracking-tight">Pipeline</h2>
-          <p className="text-xs text-zinc-500">
-            Where every lead sits — pending with us, pending with the client,
-            won or lost.
-          </p>
+          
         </div>
         <div className="flex gap-2">
           <button
@@ -4232,11 +4221,7 @@ const filteredEmployees = empSearch.trim()
             Salary-to-Retainer{" "}
             <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-zinc-400">PRIVATE</span>
           </h2>
-          <p className="text-xs text-zinc-500">
-            {monthKeys.length
-              ? `${monthKeys.length} month${monthKeys.length > 1 ? "s" : ""} tracked toward the 46% goal`
-              : "Import the monthly Finance sheet to begin."}
-          </p>
+          
         </div>
         <div className="flex flex-wrap gap-2">
           {monthKeys.length > 0 && (
