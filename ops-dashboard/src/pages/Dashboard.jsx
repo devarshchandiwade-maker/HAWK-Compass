@@ -1779,6 +1779,8 @@ function RetainersView({ retainers, setRetainers }) {
   const [confirmClear, setConfirmClear] = useState(false);
   const fileRef = useRef();
 
+  const [confirmDelete, setConfirmDelete] = useState(null);
+
   const handleExcel = (file) => {
     if (!file) return;
     const reader = new FileReader();
@@ -1905,6 +1907,35 @@ function RetainersView({ retainers, setRetainers }) {
     }
   };
 
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete) return;
+
+    try {
+      if (confirmDelete.type === "single") {
+        const data = await removeRetainer(confirmDelete.retainer.id);
+        setRetainers(
+          data.map((r) => ({
+            ...r,
+            startDate: r.start_date,
+            endDate: r.end_date,
+          })),
+        );
+      } else if (confirmDelete.type === "all") {
+        const data = await clearRetainers();
+        setRetainers(data);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(
+        confirmDelete.type === "single"
+          ? "Failed to delete retainer"
+          : "Failed to clear retainers",
+      );
+    } finally {
+      setConfirmDelete(null);
+    }
+  };
+
   const sorted = [...retainers].sort(
     (b, c) => (daysUntil(b.endDate) ?? 1e9) - (daysUntil(c.endDate) ?? 1e9),
   );
@@ -1937,7 +1968,7 @@ function RetainersView({ retainers, setRetainers }) {
           />
           {retainers.length > 0 && (
             <button
-              onClick={() => setConfirmClear(true)}
+              onClick={() => setConfirmDelete({ type: "all" })}
               className="flex items-center gap-1.5 rounded-md btn-primary px-3 py-2 text-xs font-medium text-white hover:bg-red-500 hover:border-red-500/50 hover:text-red-300"
             >
               <Trash2 size={14} /> Clear all
@@ -2079,24 +2110,9 @@ function RetainersView({ retainers, setRetainers }) {
                           <Pencil size={14} />
                         </button>
                         <button
-                          onClick={async () => {
-                            if (!window.confirm("Delete this retainer?"))
-                              return;
-
-                            try {
-                              const data = await removeRetainer(r.id);
-                              setRetainers(
-                                data.map((r) => ({
-                                  ...r,
-                                  startDate: r.start_date,
-                                  endDate: r.end_date,
-                                })),
-                              );
-                            } catch (err) {
-                              console.error(err);
-                              alert("Failed to delete retainer");
-                            }
-                          }}
+                          onClick={() =>
+                            setConfirmDelete({ type: "single", retainer: r })
+                          }
                           className="rounded p-1 text-zinc-500 hover:text-red-400"
                         >
                           <Trash2 size={14} />
@@ -2128,41 +2144,23 @@ function RetainersView({ retainers, setRetainers }) {
           onImport={commitImport}
         />
       )}
-      {confirmClear && (
-        <Modal
-          title="Clear all retainers?"
-          onClose={() => setConfirmClear(false)}
-        >
-          <p className="text-sm text-zinc-300">
-            This removes all {retainers.length} retainer
-            {retainers.length > 1 ? "s" : ""} from the list. This can't be
-            undone.
-          </p>
-          <div className="flex justify-end gap-2 pt-4">
-            <button
-              onClick={() => setConfirmClear(false)}
-              className="rounded-md px-3 py-2 text-xs text-zinc-400 hover:text-zinc-200"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={async () => {
-                try {
-                  const data = await clearRetainers();
-                  setRetainers(data);
-                  setConfirmClear(false);
-                } catch (err) {
-                  console.error(err);
-                  alert("Failed to clear retainers");
-                }
-              }}
-              className="rounded-md btn-primary px-4 py-2 text-xs font-medium text-white hover:bg-red-500"
-            >
-              Remove all
-            </button>
-          </div>
-        </Modal>
-      )}
+      <ConfirmDeleteModal
+        open={!!confirmDelete}
+        title={
+          confirmDelete?.type === "all"
+            ? "Clear all retainers?"
+            : "Delete this retainer?"
+        }
+        message={
+          confirmDelete?.type === "all"
+            ? `This removes all ${retainers.length} retainer${
+                retainers.length > 1 ? "s" : ""
+              } from the list. This can't be undone.`
+            : `This will permanently delete "${confirmDelete?.retainer?.client}". This can't be undone.`
+        }
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }
@@ -2397,6 +2395,8 @@ function PipelineView({ leads, setLeads, owners }) {
   const [showAI, setShowAI] = useState(false);
   const [toast, setToast] = useState(null);
 
+  const [confirmDelete, setConfirmDelete] = useState(null);
+
   const save = async (lead) => {
     try {
       let data;
@@ -2564,6 +2564,31 @@ function PipelineView({ leads, setLeads, owners }) {
     reader.readAsBinaryString(file);
   };
 
+  // Runs only when the modal's Delete button is actually clicked.
+   const requestDeleteLead = (lead) => {
+    setConfirmDelete({ type: "single", lead });
+  };
+
+  // Runs only when the modal's Delete button is actually clicked.
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete) return;
+
+    try {
+      const data = await removeLead(confirmDelete.lead.id);
+      setLeads(data);
+      setToast({
+        type: "edit",
+        title: "Lead Deleted",
+        message: `${confirmDelete.lead.brand_name} has been removed.`,
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete lead");
+    } finally {
+      setConfirmDelete(null);
+    }
+  };
+
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -2608,6 +2633,7 @@ function PipelineView({ leads, setLeads, owners }) {
         setLeads={setLeads}
         setEditing={setEditing}
         setShowForm={setShowForm}
+        onRequestDelete={requestDeleteLead}
       />
 
       {showForm && (
@@ -2628,6 +2654,14 @@ function PipelineView({ leads, setLeads, owners }) {
           onConfirm={addManyLeads}
         />
       )}
+
+       <ConfirmDeleteModal
+        open={!!confirmDelete}
+        title="Delete this lead?"
+        message={`This will permanently delete "${confirmDelete?.lead?.brand_name}". This can't be undone.`}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
 
       <PipelineToast toast={toast} onClose={() => setToast(null)} />
     </div>
@@ -2716,7 +2750,7 @@ const stageTone = (v) => {
 // --- main table ---
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
-function LeadCard({ leads, setLeads, setEditing, setShowForm }) {
+function LeadCard({ leads, setLeads, setEditing, setShowForm, onRequestDelete}) {
   const [expanded, setExpanded] = useState(null);
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState("");
@@ -3026,17 +3060,7 @@ function LeadCard({ leads, setLeads, setEditing, setShowForm }) {
                         </button>
                         <button
                           className="text-xs text-red-400 hover:text-red-300"
-                          onClick={async () => {
-                            if (!confirm(`Delete ${lead.brand_name}?`)) return;
-                            const brand = lead.brand_name;
-                            const data = await removeLead(lead.id);
-                            setLeads(data);
-                            setToast({
-                              type: "delete",
-                              title: "Lead Deleted",
-                              message: `${brand} has been removed from the pipeline.`,
-                            });
-                          }}
+                          onClick={() => onRequestDelete(lead)}
                         >
                           Delete
                         </button>
