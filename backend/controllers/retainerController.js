@@ -9,78 +9,46 @@ exports.getRetainers = async (req,res)=>{
     res.json(rows);
 };
 
-exports.addRetainer = async(req,res)=>{
-
-    const {
-        client,
-        amount,
-        start_date,
-        end_date,
-        status
-    } = req.body;
+exports.addRetainer = async (req, res) => {
+  try {
+    const { client, amount, start_date, end_date, status } = req.body;
 
     await db.query(
-
-        `INSERT INTO retainers
-        (client,amount,start_date,end_date,status)
-        VALUES(?,?,?,?,?)`,
-
-        [
-            client,
-            amount,
-            start_date,
-            end_date,
-            status
-        ]
-
+      `INSERT INTO retainers (client, amount, start_date, end_date, status)
+       VALUES (?, ?, ?, ?, ?)`,
+      [client, amount, start_date || null, end_date || null, status]
     );
 
     const [rows] = await db.query(
-        "SELECT * FROM retainers ORDER BY created_at DESC"
+      "SELECT * FROM retainers ORDER BY created_at DESC"
     );
-
     res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
 };
 
-exports.updateRetainer = async(req,res)=>{
-
-    const {id}=req.params;
-
-    const {
-        client,
-        amount,
-        start_date,
-        end_date,
-        status
-    }=req.body;
+exports.updateRetainer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { client, amount, start_date, end_date, status } = req.body;
 
     await db.query(
-
-        `UPDATE retainers
-        SET
-        client=?,
-        amount=?,
-        start_date=?,
-        end_date=?,
-        status=?
-        WHERE id=?`,
-
-        [
-            client,
-            amount,
-            start_date,
-            end_date,
-            status,
-            id
-        ]
-
+      `UPDATE retainers
+       SET client=?, amount=?, start_date=?, end_date=?, status=?
+       WHERE id=?`,
+      [client, amount, start_date || null, end_date || null, status, id]
     );
 
     const [rows] = await db.query(
-        "SELECT * FROM retainers ORDER BY created_at DESC"
+      "SELECT * FROM retainers ORDER BY created_at DESC"
     );
-
     res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
 };
 
 exports.deleteRetainer = async(req,res)=>{
