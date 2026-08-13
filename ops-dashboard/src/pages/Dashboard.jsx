@@ -1801,7 +1801,8 @@ function RetainersView({ retainers, setRetainers }) {
         }
         const headers = Object.keys(rows[0]);
         setMapState({ headers, rows, mapping: guessMapping(headers, rows) });
-      } catch {
+      } catch (err) {
+        console.error(err);
         setImportNote(
           "That file couldn't be read. Use a .xlsx or .csv with a header row.",
         );
