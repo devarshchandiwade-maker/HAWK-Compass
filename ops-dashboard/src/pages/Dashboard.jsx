@@ -137,10 +137,10 @@ const daysUntil = (dateStr) => {
   return Math.ceil((d - new Date().setHours(0, 0, 0, 0)) / 86400000);
 };
 
-const fmtDate = (s) => {
-  if (!s) return "—";
-  const d = new Date(s);
-  if (isNaN(d)) return s;
+const fmtDate = (si) => {
+  if (!si) return "—";
+  const d = new Date(si);
+  if (isNaN(d)) return si;
   return d.toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",

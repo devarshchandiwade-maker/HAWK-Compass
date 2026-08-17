@@ -4,6 +4,20 @@ const XLSX = require("xlsx");
 
 const norm = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
+// Loosely match a row label: order-independent, tolerates extra words
+// (e.g. "Total Retainer", "Retainer Total", "Grand Total Retainer" all match).
+const isLabelMatch = (label, ...requiredWords) =>
+  requiredWords.every((w) => label.includes(w));
+
+// Numbers that arrive as text ("10,000", " 10000 ") shouldn't silently become 0.
+const toNumber = (v) => {
+  if (v == null) return 0;
+  if (typeof v === "number") return v;
+  const cleaned = String(v).replace(/[,₹\s]/g, "");
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+};
+
 function parseSalRet(buffer) {
   const wb = XLSX.read(buffer, { type: "buffer", cellDates: true });
 
@@ -43,19 +57,20 @@ function parseSalRet(buffer) {
     const row = aoa[r];
     if (!row) continue;
     const labels = row.map((c) => (c != null ? norm(String(c)) : ""));
-    if (labels.includes("totalsalary")) salRow = row;
-    if (labels.includes("totalretainer")) retRow = row;
+    // Order-independent, tolerant match instead of an exact "totalsalary" / "totalretainer" string.
+    if (!salRow && labels.some((l) => isLabelMatch(l, "total", "salary"))) salRow = row;
+    if (!retRow && labels.some((l) => isLabelMatch(l, "total", "retainer"))) retRow = row;
     const name = row[iName];
     if (!name || typeof name !== "string") continue;
     const nn = norm(name);
-    if (nn === "central") { central = Number(row[iSalary]) || 0; continue; }
+    if (nn === "central") { central = toNumber(row[iSalary]); continue; }
     if (nn.startsWith("total") || nn.startsWith("salarytoretainer")) continue;
-    const salary = Number(row[iSalary]) || 0;
+    const salary = toNumber(row[iSalary]);
     if (!salary) continue;
     const alloc = {};
     for (const bc of brandCols) {
-      const v = Number(row[bc.c]);
-      if (v && v > 0) alloc[bc.name] = v;
+      const v = toNumber(row[bc.c]);
+      if (v > 0) alloc[bc.name] = v;
     }
     sumFull += salary;
     employees.push({
@@ -73,15 +88,21 @@ function parseSalRet(buffer) {
   });
 
   let retainer = {};
-  if (retRow) brandCols.forEach((bc) => { const v = Number(retRow[bc.c]); if (v > 0) retainer[bc.name] = v; });
+  if (retRow) brandCols.forEach((bc) => { const v = toNumber(retRow[bc.c]); if (v > 0) retainer[bc.name] = v; });
 
-  const grandSalary = salRow ? (Number(salRow[iSalary]) || sumFull + central) : sumFull + central;
+  const grandSalary = salRow ? (toNumber(salRow[iSalary]) || sumFull + central) : sumFull + central;
 
   let month = "";
   const first = aoa[0] && aoa[0][0];
   if (first instanceof Date) month = first.toISOString().slice(0, 7);
 
-  return { sheet, month, brands, employees, salaryCost, retainer, central, grandSalary };
+  // Surface data-quality problems instead of failing silently into all-zero retainers.
+  const warnings = [];
+  if (!retRow) warnings.push("Couldn't find a 'Total Retainer' row — every brand's retainer was set to 0.");
+  if (!salRow) warnings.push("Couldn't find a 'Total Salary' row — grand salary was derived by summing employees instead.");
+  if (retRow && Object.keys(retainer).length === 0) warnings.push("Found a 'Total Retainer' row, but no brand column in it had a value greater than 0.");
+
+  return { sheet, month, brands, employees, salaryCost, retainer, central, grandSalary, warnings };
 }
 
 module.exports = { parseSalRet };
